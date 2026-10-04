@@ -36,16 +36,23 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+
+    val appLockEnabled by viewModel.appLockEnabled.collectAsState()
+    val hideAmountsDefault by viewModel.hideAmountsDefault.collectAsState()
+    val flagSecureEnabled by viewModel.flagSecureEnabled.collectAsState()
+
     var showOemDialog by remember { mutableStateOf(false) }
     var showBackfillDialog by remember { mutableStateOf(false) }
     var showWipeConfirmDialog by remember { mutableStateOf(false) }
     var showLedgerKeyDialog by remember { mutableStateOf(false) }
+    var showPasteKeyDialog by remember { mutableStateOf(false) }
 
     val modelPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
-    ) { uri: Uri? ->
-        // Handle offline model import
-    }
+    ) { uri: Uri? -> }
+
+    val inkColor = MaterialTheme.colorScheme.onSurface
+    val borderColor = inkColor.copy(alpha = 0.2f)
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -56,7 +63,8 @@ fun SettingsScreen(
                         "Settings",
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontFamily = FontFamily.Serif,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 28.sp
                         )
                     )
                 }
@@ -70,11 +78,12 @@ fun SettingsScreen(
                 .padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Privacy Guarantee Card
+            // Privacy Promise Banner
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -90,7 +99,7 @@ fun SettingsScreen(
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Vyayah has ZERO INTERNET permission. No servers, no accounts, no telemetry. Your financial ledger never leaves this device.",
+                            text = "Vyayah has ZERO INTERNET permission. No servers, no accounts. Your financial ledger never leaves this phone.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -98,35 +107,137 @@ fun SettingsScreen(
                 }
             }
 
-            // Ledger Key & Backup Section
+            // SECTION 1: APP SECURITY & LOCK
             item {
                 Text(
-                    "Sovereign Security & Backups",
+                    "APP SECURITY & PRIVACY LOCK",
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontSize = 11.sp,
-                        letterSpacing = 1.sp,
+                        letterSpacing = 1.1.sp,
                         color = MaterialTheme.colorScheme.primary
                     )
                 )
             }
 
-            // Ledger Key Card
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        // Biometric App Lock
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Biometric / PIN App Lock", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                                Text("Require fingerprint or device PIN to open Vyayah", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Switch(
+                                checked = appLockEnabled,
+                                onCheckedChange = { viewModel.toggleAppLock(it) }
+                            )
+                        }
+
+                        Divider(color = borderColor)
+
+                        // Hide App Preview in Recents (FLAG_SECURE)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Hide in Recent Apps", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                                Text("Blurs app in app switcher and blocks screen capture", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Switch(
+                                checked = flagSecureEnabled,
+                                onCheckedChange = { viewModel.toggleFlagSecure(it) }
+                            )
+                        }
+
+                        Divider(color = borderColor)
+
+                        // Hide Amounts by Default
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Hide Amounts by Default", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                                Text("Starts the app with amounts masked as ••••", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Switch(
+                                checked = hideAmountsDefault,
+                                onCheckedChange = { viewModel.toggleHideAmountsDefault(it) }
+                            )
+                        }
+                    }
+                }
+            }
+
+            // SECTION 2: SOVEREIGN RECOVERY & LEDGER KEY
+            item {
+                Text(
+                    "SOVEREIGN RECOVERY & BACKUPS",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 11.sp,
+                        letterSpacing = 1.1.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                )
+            }
+
+            // View Ledger Key Card
             item {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { showLedgerKeyDialog = true },
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
                     Row(
                         modifier = Modifier.padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(Icons.Default.Key, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Spacer(modifier = Modifier.width(16.dp))
+                        Spacer(modifier = Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Your Ledger Key (Vault Recovery Phrase)", fontWeight = FontWeight.SemiBold)
-                            Text("12-word secret phrase for decrypting backups", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Your Ledger Key (Vault Phrase)", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                            Text("View 12-word master recovery phrase", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Icon(Icons.Default.ChevronRight, contentDescription = null)
+                    }
+                }
+            }
+
+            // Paste & Restore Key Card
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showPasteKeyDialog = true },
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.ContentPaste, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.width(14.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Paste Existing Ledger Key", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                            Text("Restore your key from a paper note or old phone", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Icon(Icons.Default.ChevronRight, contentDescription = null)
                     }
@@ -143,35 +254,68 @@ fun SettingsScreen(
                                 val file = viewModel.exportEncryptedBackup(context)
                                 if (file != null) {
                                     Toast.makeText(context, "Encrypted backup created: ${file.name}", Toast.LENGTH_LONG).show()
-                                } else {
-                                    Toast.makeText(context, "Backup failed: Database empty", Toast.LENGTH_SHORT).show()
                                 }
                             }
                         },
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
                     Row(
                         modifier = Modifier.padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(Icons.Default.LockReset, contentDescription = null)
-                        Spacer(modifier = Modifier.width(16.dp))
+                        Spacer(modifier = Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Export Encrypted Backup (.vyayah)", fontWeight = FontWeight.SemiBold)
-                            Text("AES-256-GCM encrypted database file", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Export Encrypted Backup (.vyayah)", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                            Text("AES-256-GCM database snapshot", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Icon(Icons.Default.Download, contentDescription = null)
                     }
                 }
             }
 
-            // Reliability & OEM Battery Management
+            // SECTION 3: SMS PARSER & OTP SHIELD
             item {
                 Text(
-                    "Reliability & Background SMS",
+                    "SMS PARSER & BANK HEADERS",
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontSize = 11.sp,
-                        letterSpacing = 1.sp,
+                        letterSpacing = 1.1.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                )
+            }
+
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text("OTP & Authentication Shield Active", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "Authentic bank headers (like VM-SBIUPI, AD-HDFCBK) frequently send OTPs and verification alerts. Vyayah automatically rejects all OTP messages so they never enter your ledger or alter account balances.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            // SECTION 4: RELIABILITY & OEM WIZARD
+            item {
+                Text(
+                    "RELIABILITY & OEM SETUP",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 11.sp,
+                        letterSpacing = 1.1.sp,
                         color = MaterialTheme.colorScheme.primary
                     )
                 )
@@ -182,16 +326,17 @@ fun SettingsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { showOemDialog = true },
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
                     Row(
                         modifier = Modifier.padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(Icons.Default.BatteryAlert, contentDescription = null)
-                        Spacer(modifier = Modifier.width(16.dp))
+                        Spacer(modifier = Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("OEM Battery & Autostart Guide", fontWeight = FontWeight.SemiBold)
+                            Text("OEM Autostart & Battery Guide", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                             Text("Setup steps for Xiaomi, Oppo, Vivo & Realme", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Icon(Icons.Default.ChevronRight, contentDescription = null)
@@ -209,30 +354,31 @@ fun SettingsScreen(
                             }
                             context.startActivity(intent)
                         },
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
                     Row(
                         modifier = Modifier.padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(Icons.Default.Settings, contentDescription = null)
-                        Spacer(modifier = Modifier.width(16.dp))
+                        Spacer(modifier = Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("App Permissions & Restricted Settings", fontWeight = FontWeight.SemiBold)
-                            Text("Grant SMS & notification permissions", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("System App Permissions", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                            Text("Review SMS & notification permissions", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Icon(Icons.Default.ChevronRight, contentDescription = null)
                     }
                 }
             }
 
-            // Data & AI
+            // SECTION 5: DATA & DANGER ZONE
             item {
                 Text(
-                    "Data & AI Model",
+                    "DATA & HISTORY",
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontSize = 11.sp,
-                        letterSpacing = 1.sp,
+                        letterSpacing = 1.1.sp,
                         color = MaterialTheme.colorScheme.primary
                     )
                 )
@@ -243,57 +389,22 @@ fun SettingsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { showBackfillDialog = true },
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
                     Row(
                         modifier = Modifier.padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(Icons.Default.History, contentDescription = null)
-                        Spacer(modifier = Modifier.width(16.dp))
+                        Spacer(modifier = Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Backfill Past SMS", fontWeight = FontWeight.SemiBold)
-                            Text("Scan inbox messages from 1, 3, or 6 months ago", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Backfill Past SMS", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                            Text("Scan inbox history (1, 3, or 6 months)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Icon(Icons.Default.ChevronRight, contentDescription = null)
                     }
                 }
-            }
-
-            item {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            modelPickerLauncher.launch(arrayOf("*/*"))
-                        },
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.SmartToy, contentDescription = null)
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Import Offline AI Model", fontWeight = FontWeight.SemiBold)
-                            Text("Import local Gemma 3 1B or Qwen2.5 0.5B model", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Icon(Icons.Default.ChevronRight, contentDescription = null)
-                    }
-                }
-            }
-
-            // Danger Zone
-            item {
-                Text(
-                    "Danger Zone",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 11.sp,
-                        letterSpacing = 1.sp,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                )
             }
 
             item {
@@ -301,17 +412,18 @@ fun SettingsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { showWipeConfirmDialog = true },
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
                     Row(
                         modifier = Modifier.padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(Icons.Default.DeleteForever, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                        Spacer(modifier = Modifier.width(16.dp))
+                        Spacer(modifier = Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Wipe All Data", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.error)
-                            Text("Permanently erase encrypted database & rules", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Wipe All Data", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = MaterialTheme.colorScheme.error)
+                            Text("Permanently erase database and ledger", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -323,7 +435,7 @@ fun SettingsScreen(
         }
     }
 
-    // Ledger Key (Vault Recovery Phrase) Dialog
+    // Modal: View 12-Word Ledger Key Dialog
     if (showLedgerKeyDialog) {
         val ledgerKey = remember { viewModel.getLedgerKey(context) }
         val words = remember { ledgerKey.split(" ") }
@@ -336,16 +448,15 @@ fun SettingsScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        text = "This 12-word secret phrase is your Sovereign Vault Key. Because Vyayah stores no data on servers, this key is required to decrypt database backups on a new phone.",
+                        text = "This 12-word secret phrase is your sovereign key. Write this down on paper. If you switch phones, you will need this key to restore your database backups.",
                         style = MaterialTheme.typography.bodySmall
                     )
 
-                    // 12-Word Grid
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.background, RoundedCornerShape(8.dp))
-                            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.background, RoundedCornerShape(10.dp))
+                            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(10.dp))
                             .padding(12.dp),
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
@@ -385,7 +496,54 @@ fun SettingsScreen(
             },
             confirmButton = {
                 Button(onClick = { showLedgerKeyDialog = false }) {
-                    Text("I Have Saved It")
+                    Text("Close")
+                }
+            }
+        )
+    }
+
+    // Modal: Paste Existing Ledger Key Dialog
+    if (showPasteKeyDialog) {
+        var pastedPhrase by remember { mutableStateOf("") }
+
+        AlertDialog(
+            onDismissRequest = { showPasteKeyDialog = false },
+            title = {
+                Text("Paste Ledger Key", fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "Enter or paste your 12-word recovery phrase separated by spaces:",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    OutlinedTextField(
+                        value = pastedPhrase,
+                        onValueChange = { pastedPhrase = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("e.g. amber bamboo cedar delta...") },
+                        maxLines = 3
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val success = viewModel.pasteAndImportLedgerKey(context, pastedPhrase)
+                        if (success) {
+                            Toast.makeText(context, "Ledger Key restored successfully!", Toast.LENGTH_LONG).show()
+                            showPasteKeyDialog = false
+                        } else {
+                            Toast.makeText(context, "Invalid key: Please enter all 12 words", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                ) {
+                    Text("Restore Key")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPasteKeyDialog = false }) {
+                    Text("Cancel")
                 }
             }
         )

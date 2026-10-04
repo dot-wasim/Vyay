@@ -158,7 +158,7 @@ fun MainApp() {
                 }
                 composable(Screen.Ledger.route) { LedgerScreen() }
                 composable(Screen.Cards.route) { CardsScreen() }
-                composable(Screen.Trips.route) { PlaceholderScreen("Trips", "Tag expenses to journeys and vacations (v1.1 feature).") }
+                composable(Screen.Trips.route) { com.vyayah.app.ui.screens.trips.TripsScreen() }
                 composable(Screen.Save.route) { SaveScreen() }
                 composable(Screen.Ask.route) { PlaceholderScreen("Ask", "Natural language queries over your local ledger using offline AI (v1.1 feature).") }
                 composable(Screen.Settings.route) { SettingsScreen() }

@@ -31,6 +31,7 @@ val appModule = module {
     viewModel { LedgerViewModel(get(), get(), get()) }
     viewModel { CardsViewModel(get(), get()) }
     viewModel { SaveViewModel(get()) }
+    viewModel { com.vyayah.app.ui.screens.trips.TripsViewModel() }
     viewModel { SettingsViewModel(get(), get(), get(), get()) }
     viewModel { OnboardingViewModel(get(), get(), get()) }
 }

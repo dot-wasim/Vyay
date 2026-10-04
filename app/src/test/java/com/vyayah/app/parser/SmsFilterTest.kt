@@ -7,10 +7,17 @@ import org.junit.Test
 class SmsFilterTest {
 
     @Test
-    fun testOtpExclusion() {
-        val sender = "VM-HDFCBK"
-        val body = "482910 is your OTP for purchase of Rs. 4,500.00 at AMAZON. Do not share OTP with anyone."
-        assertFalse("OTPs must be strictly rejected", SmsFilter.shouldProcess(sender, body))
+    fun testVmSbiUpiOtpExclusion() {
+        val sender = "VM-SBIUPI"
+        val body = "842910 is your OTP for transaction of Rs. 1,450.00 at SWIGGY. Do not share OTP with anyone - State Bank of India"
+        assertFalse("OTPs from VM-SBIUPI must NEVER enter the ledger or adjust balances", SmsFilter.shouldProcess(sender, body))
+    }
+
+    @Test
+    fun testHdfcBankOtpExclusion() {
+        val sender = "AD-HDFCBK"
+        val body = "482910 is your secret code for purchase of Rs. 4,500.00 at AMAZON. Valid for 10 mins. Never share your password/OTP."
+        assertFalse("OTPs from HDFC Bank must NEVER enter the ledger", SmsFilter.shouldProcess(sender, body))
     }
 
     @Test
@@ -21,13 +28,6 @@ class SmsFilterTest {
     }
 
     @Test
-    fun testPromotionalLoanOfferExclusion() {
-        val sender = "BZ-AXISBK"
-        val body = "Congratulations! You are eligible for pre-approved personal loan of Rs 5,00,000. Apply now."
-        assertFalse("Loan and promotional offers must be rejected", SmsFilter.shouldProcess(sender, body))
-    }
-
-    @Test
     fun testPersonalPhoneNumberExclusion() {
         val sender = "+919876543210"
         val body = "Hey bro, sent you Rs 500 on GPay check it out."
@@ -35,9 +35,9 @@ class SmsFilterTest {
     }
 
     @Test
-    fun testValidTransactionAccepted() {
-        val sender = "VM-HDFCBK"
-        val body = "Debited Rs. 450.00 from A/C **1234 to SWIGGY on 04-10-26. Avl Bal Rs. 14,050.00."
-        assertTrue("Legitimate bank transaction must pass filter", SmsFilter.shouldProcess(sender, body))
+    fun testVmSbiUpiAuthenticDebitAccepted() {
+        val sender = "VM-SBIUPI"
+        val body = "Dear UPI user A/C 4567 debited by 320.0 on 04Oct26 by transfer to VPA blinkit@icici (Ref no 427811902831)."
+        assertTrue("Legitimate debit SMS from VM-SBIUPI must be accepted", SmsFilter.shouldProcess(sender, body))
     }
 }

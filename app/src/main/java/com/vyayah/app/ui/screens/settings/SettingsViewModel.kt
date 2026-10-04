@@ -14,13 +14,14 @@ import com.vyayah.app.data.model.SyncState
 import com.vyayah.app.data.security.BackupKeyManager
 import com.vyayah.app.worker.CatchUpSyncWorker
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.io.FileInputStream
 import java.io.FileOutputStream
 
 class SettingsViewModel(
@@ -30,20 +31,38 @@ class SettingsViewModel(
     private val database: VyayahDatabase
 ) : ViewModel() {
 
+    private val _appLockEnabled = MutableStateFlow(false)
+    val appLockEnabled: StateFlow<Boolean> = _appLockEnabled.asStateFlow()
+
+    private val _hideAmountsDefault = MutableStateFlow(true)
+    val hideAmountsDefault: StateFlow<Boolean> = _hideAmountsDefault.asStateFlow()
+
+    private val _flagSecureEnabled = MutableStateFlow(true)
+    val flagSecureEnabled: StateFlow<Boolean> = _flagSecureEnabled.asStateFlow()
+
     val senderRules: StateFlow<List<SenderRule>> = ruleDao.getAllSenderRules()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    /**
-     * Retrieves or generates the user's sovereign 12-word recovery key.
-     * Named "Ledger Key" (Kosh Key).
-     */
+    fun toggleAppLock(enabled: Boolean) {
+        _appLockEnabled.value = enabled
+    }
+
+    fun toggleHideAmountsDefault(enabled: Boolean) {
+        _hideAmountsDefault.value = enabled
+    }
+
+    fun toggleFlagSecure(enabled: Boolean) {
+        _flagSecureEnabled.value = enabled
+    }
+
     fun getLedgerKey(context: Context): String {
         return BackupKeyManager.getOrCreateVaultKey(context)
     }
 
-    /**
-     * Exports an encrypted database backup file (.vyayah) encrypted with the Ledger Key.
-     */
+    fun pasteAndImportLedgerKey(context: Context, keyPhrase: String): Boolean {
+        return BackupKeyManager.importVaultKey(context, keyPhrase)
+    }
+
     suspend fun exportEncryptedBackup(context: Context): File? = withContext(Dispatchers.IO) {
         try {
             val dbPath = context.getDatabasePath("vyayah_encrypted.db")
@@ -61,22 +80,6 @@ class SettingsViewModel(
         }
     }
 
-    /**
-     * Restores an encrypted database backup file using the user-provided Ledger Key.
-     */
-    suspend fun restoreEncryptedBackup(context: Context, backupFile: File, inputKey: String): Boolean = withContext(Dispatchers.IO) {
-        try {
-            val encryptedBytes = backupFile.readBytes()
-            val decryptedDb = BackupKeyManager.decryptWithVaultKey(inputKey.trim(), encryptedBytes)
-
-            val dbPath = context.getDatabasePath("vyayah_encrypted.db")
-            FileOutputStream(dbPath).use { it.write(decryptedDb) }
-            true
-        } catch (e: Exception) {
-            false
-        }
-    }
-
     fun triggerBackfill(context: Context, monthsBack: Int) {
         viewModelScope.launch {
             val millisBack = monthsBack * 30L * 24 * 60 * 60 * 1000
@@ -91,18 +94,6 @@ class SettingsViewModel(
 
             val request = OneTimeWorkRequestBuilder<CatchUpSyncWorker>().build()
             WorkManager.getInstance(context).enqueue(request)
-        }
-    }
-
-    fun addSenderRule(pattern: String, bankName: String) {
-        viewModelScope.launch {
-            ruleDao.insertSenderRule(
-                SenderRule(
-                    senderPattern = pattern.trim(),
-                    allowed = true,
-                    bankName = bankName.ifBlank { null }
-                )
-            )
         }
     }
 

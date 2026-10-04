@@ -8,10 +8,13 @@ object SmsFilter {
         "transferred", "withdrawn", "avl bal", "available balance", "txn"
     )
 
+    // Strict hard exclusions: If ANY of these appear, it is NEVER a ledger transaction.
+    // Even if sent by VM-SBIUPI or AD-HDFCBK, OTPs must NEVER enter the ledger or adjust balances.
     private val HARD_EXCLUSION_KEYWORDS = listOf(
-        "otp", "one time password", "verification code", "secret code",
+        "otp", "one time password", "verification code", "secret code", "security code",
         "do not share", "never share", "valid for", "login alert", "logged in",
-        "pre-approved", "apply now", "loan offer", "congratulations! you are eligible",
+        "mandate otp", "auth code", "is your code", "use code", "secret otp",
+        "not you? call", "pre-approved", "apply now", "loan offer", "congratulations! you are eligible",
         "hurry! offer", "claim your", "click here to", "exclusive offer"
     )
 
@@ -30,7 +33,8 @@ object SmsFilter {
             return false
         }
 
-        // 2. Hard exclusions: OTPs, logins, promo offers
+        // 2. CRITICAL GATE: Hard exclusions (OTPs, passwords, login alerts, promos)
+        // Must run FIRST even if the sender is an authentic bank like VM-SBIUPI or AD-HDFCBK!
         if (HARD_EXCLUSION_KEYWORDS.any { lowerBody.contains(it) }) {
             return false
         }
@@ -47,7 +51,6 @@ object SmsFilter {
         }
 
         // Fallback: If header matches standard Indian 2-letter operator + 6-character header pattern (e.g. BZ-SBIUPI, AD-HDFCBK)
-        // and contains strong transaction keywords
         if (trimmedSender.contains("-") && (lowerBody.contains("debited") || lowerBody.contains("credited") || lowerBody.contains("spent"))) {
             return true
         }
