@@ -1,11 +1,13 @@
 package com.vyayah.app.ui.screens.cards
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -28,8 +30,10 @@ fun CardsScreen(
     viewModel: CardsViewModel = koinViewModel()
 ) {
     val accounts by viewModel.accounts.collectAsState()
+    val combinedMetrics by viewModel.combinedCardMetrics.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     val inkColor = MaterialTheme.colorScheme.onSurface
+    val borderColor = inkColor.copy(alpha = 0.2f)
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -53,35 +57,147 @@ fun CardsScreen(
             )
         }
     ) { padding ->
-        if (accounts.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(20.dp),
-                contentAlignment = Alignment.Center
-            ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // COMBINED CREDIT LIMIT SUMMARY CARD
+            if (combinedMetrics.cardCount > 0 && combinedMetrics.totalLimitMinor > 0) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        shape = RoundedCornerShape(20.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(20.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "COMBINED CREDIT LIMIT (${combinedMetrics.cardCount} CARDS)",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 11.sp,
+                                        letterSpacing = 1.1.sp,
+                                        color = inkColor.copy(alpha = 0.65f)
+                                    )
+                                )
+                                Text(
+                                    text = "${combinedMetrics.utilizationPercentage.toInt()}% used",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (combinedMetrics.utilizationPercentage > 50) MaterialTheme.colorScheme.error else ForestGreen
+                                    )
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            // Big Combined Limit
+                            Text(
+                                text = AmountParser.formatPaiseToInr(combinedMetrics.totalLimitMinor),
+                                style = MaterialTheme.typography.headlineMedium.copy(
+                                    fontFamily = FontFamily.Serif,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 32.sp,
+                                    color = inkColor
+                                )
+                            )
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Overall Limit Utilization Bar
+                            val progressFraction = (combinedMetrics.utilizationPercentage / 100f).coerceIn(0f, 1f)
+                            LinearProgressIndicator(
+                                progress = { progressFraction },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(6.dp)
+                                    .clip(RoundedCornerShape(3.dp)),
+                                color = if (combinedMetrics.utilizationPercentage > 50) MaterialTheme.colorScheme.error else ForestGreen,
+                                trackColor = MaterialTheme.colorScheme.surface
+                            )
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            // Grid: Total Outstanding vs Available Credit
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "Total Outstanding",
+                                        style = MaterialTheme.typography.labelSmall.copy(color = inkColor.copy(alpha = 0.6f))
+                                    )
+                                    Text(
+                                        text = AmountParser.formatPaiseToInr(combinedMetrics.totalOutstandingMinor),
+                                        style = MaterialTheme.typography.bodyLarge.copy(
+                                            fontFamily = FontFamily.Serif,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.error
+                                        )
+                                    )
+                                }
+
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text(
+                                        text = "Available Credit",
+                                        style = MaterialTheme.typography.labelSmall.copy(color = inkColor.copy(alpha = 0.6f))
+                                    )
+                                    Text(
+                                        text = AmountParser.formatPaiseToInr(combinedMetrics.totalAvailableLimitMinor),
+                                        style = MaterialTheme.typography.bodyLarge.copy(
+                                            fontFamily = FontFamily.Serif,
+                                            fontWeight = FontWeight.Bold,
+                                            color = ForestGreen
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Section Header
+            item {
                 Text(
-                    text = "No accounts or cards yet.\nThey will appear automatically when SMS arrives, or you can add one above.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "INDIVIDUAL ACCOUNTS & CARDS",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 11.sp,
+                        letterSpacing = 1.1.sp,
+                        color = inkColor.copy(alpha = 0.65f)
+                    )
                 )
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(horizontal = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
+
+            if (accounts.isEmpty()) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Text(
+                            text = "No accounts or cards logged yet.\nTap '+' above to add your bank accounts and credit cards.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(20.dp)
+                        )
+                    }
+                }
+            } else {
                 items(accounts, key = { it.id }) { acc ->
                     val isCredit = acc.type == AccountType.CREDIT
 
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                        shape = RoundedCornerShape(18.dp)
+                        shape = RoundedCornerShape(16.dp)
                     ) {
                         Column(modifier = Modifier.padding(18.dp)) {
                             Row(
@@ -91,9 +207,9 @@ fun CardsScreen(
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(
-                                        imageVector = Icons.Default.CreditCard,
+                                        imageVector = if (isCredit) Icons.Default.CreditCard else Icons.Default.AccountBalance,
                                         contentDescription = null,
-                                        tint = ForestGreen
+                                        tint = if (isCredit) inkColor else ForestGreen
                                     )
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Column {
@@ -139,7 +255,7 @@ fun CardsScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     Text(
-                                        text = "Limit: ${AmountParser.formatPaiseToInr(limit)}",
+                                        text = "Card Limit: ${AmountParser.formatPaiseToInr(limit)}",
                                         style = MaterialTheme.typography.labelSmall
                                     )
                                     Text(
@@ -162,6 +278,10 @@ fun CardsScreen(
                     }
                 }
             }
+
+            item {
+                Spacer(modifier = Modifier.height(32.dp))
+            }
         }
     }
 
@@ -169,6 +289,7 @@ fun CardsScreen(
         var bankName by remember { mutableStateOf("") }
         var last4 by remember { mutableStateOf("") }
         var balanceRupees by remember { mutableStateOf("") }
+        var creditLimitRupees by remember { mutableStateOf("") }
         var isCreditCard by remember { mutableStateOf(false) }
 
         AlertDialog(
@@ -181,7 +302,7 @@ fun CardsScreen(
                     OutlinedTextField(
                         value = bankName,
                         onValueChange = { bankName = it },
-                        label = { Text("Bank Name (e.g. HDFC, SBI)") },
+                        label = { Text("Bank / Issuer Name (e.g. HDFC, ICICI)") },
                         singleLine = true
                     )
                     OutlinedTextField(
@@ -200,12 +321,22 @@ fun CardsScreen(
                         Checkbox(checked = isCreditCard, onCheckedChange = { isCreditCard = it })
                         Text("This is a Credit Card")
                     }
+                    if (isCreditCard) {
+                        OutlinedTextField(
+                            value = creditLimitRupees,
+                            onValueChange = { creditLimitRupees = it },
+                            label = { Text("Total Credit Limit (₹)") },
+                            singleLine = true
+                        )
+                    }
                 }
             },
             confirmButton = {
                 Button(
                     onClick = {
                         val balPaise = AmountParser.parseToMinorUnits(balanceRupees.ifBlank { "0" })
+                        val limitPaise = if (isCreditCard) AmountParser.parseToMinorUnits(creditLimitRupees.ifBlank { "0" }) else null
+
                         viewModel.addOrUpdateAccount(
                             Account(
                                 bank = bankName.ifBlank { "Bank" },
@@ -214,7 +345,8 @@ fun CardsScreen(
                                 nickname = "$bankName $last4",
                                 openingBalance = balPaise,
                                 currentBalance = balPaise,
-                                outstanding = if (isCreditCard) balPaise else null
+                                outstanding = if (isCreditCard) balPaise else null,
+                                creditLimit = limitPaise
                             )
                         )
                         showAddDialog = false

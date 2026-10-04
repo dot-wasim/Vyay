@@ -5,10 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.vyayah.app.data.local.CategoryDao
 import com.vyayah.app.data.local.RuleDao
 import com.vyayah.app.data.local.TransactionDao
-import com.vyayah.app.data.model.Category
-import com.vyayah.app.data.model.MerchantRule
-import com.vyayah.app.data.model.Transaction
-import com.vyayah.app.data.model.TransactionStatus
+import com.vyayah.app.data.model.*
+import com.vyayah.app.parser.AmountParser
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -69,6 +67,72 @@ class LedgerViewModel(
 
     fun selectCategory(categoryId: Long?) {
         _selectedCategoryId.value = if (_selectedCategoryId.value == categoryId) null else categoryId
+    }
+
+    /**
+     * Adds a manually entered transaction (missed SMS or cash purchase).
+     */
+    fun addMissedTransaction(
+        amountRupees: String,
+        merchantName: String,
+        direction: TransactionDirection,
+        instrument: PaymentInstrument,
+        categoryId: Long?,
+        notes: String?
+    ) {
+        viewModelScope.launch {
+            val amountMinor = AmountParser.parseToMinorUnits(amountRupees.trim())
+            if (amountMinor <= 0L) return@launch
+
+            val now = System.currentTimeMillis()
+            val newTxn = Transaction(
+                smsHash = "manual_${now}_${(1000..9999).random()}",
+                sender = "Manual Entry",
+                rawBody = notes ?: "Manually entered transaction",
+                timestamp = now,
+                amountMinor = amountMinor,
+                currency = "INR",
+                direction = direction,
+                type = if (direction == TransactionDirection.DEBIT) TransactionType.PURCHASE else TransactionType.INCOME,
+                instrument = instrument,
+                merchantRaw = merchantName.trim(),
+                merchantNorm = merchantName.trim().ifBlank { "Uncategorized" },
+                categoryId = categoryId,
+                status = TransactionStatus.CONFIRMED,
+                source = ParseSource.MANUAL,
+                confidence = 1.0f,
+                notes = notes
+            )
+            transactionDao.insert(newTxn)
+        }
+    }
+
+    /**
+     * Renames any transaction and optionally updates future merchant naming rules.
+     */
+    fun renameTransaction(transaction: Transaction, newName: String, teachRule: Boolean = false) {
+        viewModelScope.launch {
+            val cleanName = newName.trim()
+            if (cleanName.isBlank()) return@launch
+
+            transactionDao.update(
+                transaction.copy(
+                    merchantNorm = cleanName,
+                    status = TransactionStatus.CONFIRMED
+                )
+            )
+
+            if (teachRule && !transaction.merchantRaw.isNullOrBlank() && transaction.categoryId != null) {
+                ruleDao.insertMerchantRule(
+                    MerchantRule(
+                        pattern = transaction.merchantRaw,
+                        categoryId = transaction.categoryId,
+                        priority = 15,
+                        isRegex = false
+                    )
+                )
+            }
+        }
     }
 
     fun deleteTransaction(transaction: Transaction) {

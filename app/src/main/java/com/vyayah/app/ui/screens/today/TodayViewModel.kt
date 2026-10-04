@@ -6,11 +6,7 @@ import com.vyayah.app.data.local.AccountDao
 import com.vyayah.app.data.local.BudgetDao
 import com.vyayah.app.data.local.CategoryDao
 import com.vyayah.app.data.local.TransactionDao
-import com.vyayah.app.data.model.Account
-import com.vyayah.app.data.model.Category
-import com.vyayah.app.data.model.Transaction
-import com.vyayah.app.data.model.TransactionDirection
-import com.vyayah.app.data.model.TransactionType
+import com.vyayah.app.data.model.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -64,7 +60,6 @@ class TodayViewModel(
         val currentDay = calendar.get(Calendar.DAY_OF_MONTH)
         val daysLeft = maxDays - currentDay
 
-        // Calculate start of current month
         calendar.set(Calendar.DAY_OF_MONTH, 1)
         calendar.set(Calendar.HOUR_OF_DAY, 0)
         calendar.set(Calendar.MINUTE, 0)
@@ -98,8 +93,12 @@ class TodayViewModel(
         var mtdSpend = 0L
         var mtdIncome = 0L
         val categoryTotals = mutableMapOf<Long, Long>()
+        val accountMap = accounts.associateBy { it.id }
 
         for (tx in txns) {
+            val linkedAccount = tx.accountId?.let { accountMap[it] }
+            val isCreditCard = linkedAccount?.type == AccountType.CREDIT || tx.instrument == PaymentInstrument.CARD
+
             when {
                 tx.type == TransactionType.BILL_PAYMENT || tx.type == TransactionType.TRANSFER -> {
                     // Excluded from income and spend
@@ -110,13 +109,16 @@ class TodayViewModel(
                     categoryTotals[catId] = (categoryTotals[catId] ?: 0L) + tx.amountMinor
                 }
                 tx.type == TransactionType.REFUND || tx.type == TransactionType.REVERSAL -> {
-                    // Reduces spend
+                    // Reduces spend in that category
                     mtdSpend -= tx.amountMinor
                     val catId = tx.categoryId ?: 0L
                     categoryTotals[catId] = (categoryTotals[catId] ?: 0L) - tx.amountMinor
                 }
                 tx.direction == TransactionDirection.CREDIT -> {
-                    mtdIncome += tx.amountMinor
+                    // RULE: Income is ONLY calculated as total money in bank (not via credit cards)
+                    if (!isCreditCard) {
+                        mtdIncome += tx.amountMinor
+                    }
                 }
             }
         }
@@ -139,7 +141,7 @@ class TodayViewModel(
         var totalAvlBal = 0L
         var totalOutstanding = 0L
         for (acc in accounts) {
-            if (acc.includeInTotal) {
+            if (acc.includeInTotal && acc.type != AccountType.CREDIT) {
                 totalAvlBal += acc.currentBalance
             }
             if (acc.outstanding != null) {
@@ -156,7 +158,7 @@ class TodayViewModel(
             monthIncomeMinor = mtdIncome,
             netSavingsMinor = netSavings,
             savingsPercentage = savingsRate,
-            paceVersusLastMonthPercentage = 4, // Comparison baseline
+            paceVersusLastMonthPercentage = 4,
             daysLeftInMonth = daysLeft,
             monthName = monthName,
             categoryBreakdown = categorySpends,
