@@ -27,6 +27,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
     version = 2,
     exportSchema = false
 )
+@androidx.room.TypeConverters(Converters::class)
 abstract class VyayahDatabase : RoomDatabase() {
 
     abstract fun transactionDao(): TransactionDao
