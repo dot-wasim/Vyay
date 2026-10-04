@@ -6,7 +6,6 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.vyayah.app.di.appModule
 import com.vyayah.app.worker.CatchUpSyncWorker
-import net.zetetic.database.sqlcipher.SQLiteDatabase
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
@@ -18,7 +17,10 @@ class VyayahApp : Application() {
         super.onCreate()
 
         // Initialize SQLCipher native libraries
-        SQLiteDatabase.loadLibs(this)
+        try {
+            System.loadLibrary("sqlcipher")
+        } catch (_: Throwable) {
+        }
 
         // Initialize Koin Dependency Injection
         startKoin {

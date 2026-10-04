@@ -83,4 +83,11 @@ class CatchUpSyncWorker(
             return Result.failure()
         }
     }
+
+    companion object {
+        fun triggerOneTimeSync(context: Context, forceFullScan: Boolean = false) {
+            val request = OneTimeWorkRequestBuilder<CatchUpSyncWorker>().build()
+            WorkManager.getInstance(context).enqueue(request)
+        }
+    }
 }

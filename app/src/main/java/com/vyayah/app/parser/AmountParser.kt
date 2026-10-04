@@ -59,6 +59,12 @@ object AmountParser {
         }
     }
 
+    /**
+     * Alias for formatting Indian Currency from paise minor units.
+     */
+    fun formatIndianCurrency(paise: Long, includePaise: Boolean = false): String =
+        formatPaiseToInr(paise, includePaise)
+
     private fun formatIndianNumbering(n: Long): String {
         val s = n.toString()
         if (s.length <= 3) return s

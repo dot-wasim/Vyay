@@ -8,7 +8,6 @@ import com.vyayah.app.ui.screens.onboarding.OnboardingViewModel
 import com.vyayah.app.ui.screens.save.SaveViewModel
 import com.vyayah.app.ui.screens.settings.SettingsViewModel
 import com.vyayah.app.ui.screens.today.TodayViewModel
-import org.koin.android.ext.kinit
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
