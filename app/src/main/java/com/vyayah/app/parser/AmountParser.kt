@@ -1,0 +1,74 @@
+package com.vyayah.app.parser
+
+object AmountParser {
+
+    private val AMOUNT_REGEX = Regex(
+        "(?:INR|Rs\\.?|₹)\\s*([0-9]{1,3}(?:,[0-9]{2,3})*(?:\\.[0-9]{1,2})?|[0-9]+(?:\\.[0-9]{1,2})?)",
+        RegexOption.IGNORE_CASE
+    )
+
+    /**
+     * Parses an amount string to integer paise.
+     * Example: "1,234.50" -> 123450L
+     * Example: "450" -> 45000L
+     */
+    fun parseToMinorUnits(rawAmount: String): Long {
+        val cleaned = rawAmount.replace(",", "").trim()
+        val parts = cleaned.split(".")
+        val rupees = parts[0].toLongOrNull() ?: 0L
+        val paise = if (parts.size > 1) {
+            val p = parts[1]
+            when (p.length) {
+                0 -> 0L
+                1 -> (p + "0").toLongOrNull() ?: 0L
+                else -> p.take(2).toLongOrNull() ?: 0L
+            }
+        } else {
+            0L
+        }
+        return (rupees * 100) + paise
+    }
+
+    /**
+     * Extracts the first transaction amount found in the text.
+     * Returns Pair(amountInPaise, rawAmountString) or null if not found.
+     */
+    fun extractTransactionAmount(text: String): Pair<Long, String>? {
+        val match = AMOUNT_REGEX.find(text) ?: return null
+        val rawNum = match.groupValues[1]
+        val paise = parseToMinorUnits(rawNum)
+        return if (paise > 0L) Pair(paise, rawNum) else null
+    }
+
+    /**
+     * Formats integer paise into Indian Rupee presentation format.
+     * Example: 12345600L -> "₹1,23,456"
+     */
+    fun formatPaiseToInr(paise: Long, includePaise: Boolean = false): String {
+        val isNegative = paise < 0
+        val absPaise = kotlin.math.abs(paise)
+        val rupees = absPaise / 100
+        val p = absPaise % 100
+
+        val rupeeString = formatIndianNumbering(rupees)
+        val prefix = if (isNegative) "-₹" else "₹"
+        return if (includePaise && p > 0) {
+            "$prefix$rupeeString.${p.toString().padStart(2, '0')}"
+        } else {
+            "$prefix$rupeeString"
+        }
+    }
+
+    private fun formatIndianNumbering(n: Long): String {
+        val s = n.toString()
+        if (s.length <= 3) return s
+        val lastThree = s.substring(s.length - 3)
+        var remaining = s.substring(0, s.length - 3)
+        val sb = java.lang.StringBuilder()
+        while (remaining.length > 2) {
+            sb.insert(0, "," + remaining.substring(remaining.length - 2))
+            remaining = remaining.substring(0, remaining.length - 2)
+        }
+        return remaining + sb.toString() + "," + lastThree
+    }
+}
