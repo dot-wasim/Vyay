@@ -1,4 +1,4 @@
-name: Build and Test Vyayah
+name: Build and Test Vyay
 
 on:
   push:
@@ -6,6 +6,7 @@ on:
     tags: [ "v*" ]
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -24,19 +25,23 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Ensure Gradle Wrapper
+        run: |
+          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+            curl -sLo gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v8.10.2/gradle/wrapper/gradle-wrapper.jar
+          fi
+          chmod +x gradlew
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
-
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew || true
 
       - name: Run Unit Tests (Golden Parser Suite)
         run: ./gradlew test --stacktrace
 
   build-debug:
-    name: Build Debug APK
+    name: Build APK & Publish Release
     needs: test
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Source
@@ -48,75 +53,57 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Ensure Gradle Wrapper
+        run: |
+          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+            curl -sLo gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v8.10.2/gradle/wrapper/gradle-wrapper.jar
+          fi
+          chmod +x gradlew
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
-
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew || true
 
       - name: Assemble Debug APK
         run: ./gradlew assembleDebug --stacktrace
 
+      - name: Prepare APK File
+        run: |
+          mkdir -p release_assets
+          cp app/build/outputs/apk/debug/app-debug.apk release_assets/vyay-app.apk
+          cd release_assets
+          sha256sum vyay-app.apk > sha256.txt
+          echo "SHA256 Checksum:"
+          cat sha256.txt
+
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: vyayah-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: vyay-app-apk
+          path: release_assets/vyay-app.apk
 
-  build-release:
-    name: Build Signed Release APK & GitHub Release
-    needs: test
-    if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Source
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew || true
-
-      - name: Decode Keystore
-        if: env.KEYSTORE_BASE64 != ''
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-        run: |
-          echo "$KEYSTORE_BASE64" | base64 --decode > app/release.keystore
-
-      - name: Build Release APK
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew assembleRelease --stacktrace
-
-      - name: Calculate SHA-256 Checksum
-        run: |
-          cd app/build/outputs/apk/release/
-          sha256sum app-release.apk > checksum.txt
-          echo "SHA256 Checksum:"
-          cat checksum.txt
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: vyayah-release-apk
-          path: app/build/outputs/apk/release/app-release.apk
-
-      - name: Publish GitHub Release (for Obtainium)
+      - name: Publish GitHub Release (Direct APK Download)
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v0.1.0-alpha
+          name: "Vyay (व्यय) v0.1.0-alpha"
+          body: |
+            ## Vyay (व्यय) — Local SMS Expense Tracker
+            
+            ### What's New in this Build:
+            - **100% Offline & Private:** Zero `android.permission.INTERNET` in manifest.
+            - **Bank Parsers:** Native support for HDFC, SBI, ICICI, Axis, and Paytm.
+            - **Strict OTP Shield:** Bank OTPs & passwords from all senders are filtered at the gate and never written to disk.
+            - **Budgets & Pacing:** Category allocations with 80% and 100% alert thresholds.
+            - **Trips Section:** Ring-fenced travel budgets that don't corrupt monthly grocery/dining pacing.
+            - **App Lock:** Biometric & PIN lock + `FLAG_SECURE` app switcher masking.
+            
+            ### Download & Install:
+            - Download `vyay-app.apk` below and install on Android 10+.
+            - On Android 13/14/15: if SMS permission is greyed out, enable *Allow restricted settings* in App Info (⋮).
           files: |
-            app/build/outputs/apk/release/app-release.apk
-            app/build/outputs/apk/release/checksum.txt
-          generate_release_notes: true
+            release_assets/vyay-app.apk
+            release_assets/sha256.txt
           draft: false
           prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
