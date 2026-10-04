@@ -12,11 +12,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vyayah.app.data.model.Goal
 import com.vyayah.app.parser.AmountParser
+import com.vyayah.app.ui.theme.ForestGreen
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,10 +31,18 @@ fun SaveScreen(
     var selectedGoalForContribute by remember { mutableStateOf<Goal?>(null) }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = {
-                    Text("Savings Goals", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+                    Text(
+                        "Savings Goals",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontFamily = FontFamily.Serif,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 28.sp
+                        )
+                    )
                 },
                 actions = {
                     IconButton(onClick = { showAddDialog = true }) {
@@ -46,11 +56,12 @@ fun SaveScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding),
+                    .padding(padding)
+                    .padding(20.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "No savings goals created yet.\nTap + to set a target (e.g. 'Emergency Fund', 'iPhone', 'Trip').",
+                    text = "No savings goals created yet.\nTap + to set a target (e.g. 'Emergency Fund', 'New iPhone', 'Trip').",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -60,8 +71,8 @@ fun SaveScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .padding(horizontal = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 items(goals, key = { it.id }) { goal ->
                     val progress = if (goal.targetAmountMinor > 0) {
@@ -70,26 +81,31 @@ fun SaveScreen(
 
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        shape = RoundedCornerShape(18.dp)
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
+                        Column(modifier = Modifier.padding(18.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(text = goal.emoji, fontSize = 24.sp)
-                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Text(text = goal.emoji, fontSize = 26.sp)
+                                    Spacer(modifier = Modifier.width(12.dp))
                                     Column {
                                         Text(
                                             text = goal.name,
-                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                                            style = MaterialTheme.typography.titleMedium.copy(
+                                                fontFamily = FontFamily.Serif,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 18.sp
+                                            )
                                         )
                                         Text(
                                             text = "${(progress * 100).toInt()}% completed",
                                             style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.primary
+                                            color = ForestGreen
                                         )
                                     }
                                 }
@@ -97,7 +113,8 @@ fun SaveScreen(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Button(
                                         onClick = { selectedGoalForContribute = goal },
-                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.onSurface)
                                     ) {
                                         Text("Add")
                                     }
@@ -107,17 +124,17 @@ fun SaveScreen(
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(14.dp))
                             LinearProgressIndicator(
                                 progress = { progress },
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(8.dp)
-                                    .clip(RoundedCornerShape(4.dp)),
-                                color = MaterialTheme.colorScheme.primary,
+                                    .height(5.dp)
+                                    .clip(RoundedCornerShape(2.5.dp)),
+                                color = ForestGreen,
                                 trackColor = MaterialTheme.colorScheme.surface
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(10.dp))
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -125,12 +142,16 @@ fun SaveScreen(
                             ) {
                                 Text(
                                     text = "Saved: ${AmountParser.formatPaiseToInr(goal.savedAmountMinor)}",
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        fontFamily = FontFamily.Serif,
+                                        fontWeight = FontWeight.Bold
+                                    )
                                 )
                                 Text(
                                     text = "Target: ${AmountParser.formatPaiseToInr(goal.targetAmountMinor)}",
                                     style = MaterialTheme.typography.bodyMedium.copy(
-                                        fontWeight = FontWeight.SemiBold,
+                                        fontFamily = FontFamily.Serif,
+                                        fontWeight = FontWeight.Medium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 )
@@ -149,7 +170,9 @@ fun SaveScreen(
 
         AlertDialog(
             onDismissRequest = { showAddDialog = false },
-            title = { Text("New Goal") },
+            title = {
+                Text("New Goal", fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold)
+            },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
@@ -161,7 +184,7 @@ fun SaveScreen(
                     OutlinedTextField(
                         value = name,
                         onValueChange = { name = it },
-                        label = { Text("Goal Name (e.g. New Laptop)") },
+                        label = { Text("Goal Name (e.g. New iPhone)") },
                         singleLine = true
                     )
                     OutlinedTextField(
@@ -194,7 +217,9 @@ fun SaveScreen(
         var addAmount by remember { mutableStateOf("") }
         AlertDialog(
             onDismissRequest = { selectedGoalForContribute = null },
-            title = { Text("Add savings to ${goal.name}") },
+            title = {
+                Text("Add savings to ${goal.name}", fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold)
+            },
             text = {
                 OutlinedTextField(
                     value = addAmount,

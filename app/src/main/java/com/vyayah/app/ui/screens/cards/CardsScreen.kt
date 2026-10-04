@@ -12,11 +12,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.vyayah.app.data.model.Account
 import com.vyayah.app.data.model.AccountType
 import com.vyayah.app.parser.AmountParser
+import com.vyayah.app.ui.theme.ForestGreen
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -26,12 +29,21 @@ fun CardsScreen(
 ) {
     val accounts by viewModel.accounts.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
+    val inkColor = MaterialTheme.colorScheme.onSurface
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = {
-                    Text("Accounts & Cards", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+                    Text(
+                        "Accounts & Cards",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontFamily = FontFamily.Serif,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 28.sp
+                        )
+                    )
                 },
                 actions = {
                     IconButton(onClick = { showAddDialog = true }) {
@@ -45,7 +57,8 @@ fun CardsScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding),
+                    .padding(padding)
+                    .padding(20.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -59,20 +72,18 @@ fun CardsScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .padding(horizontal = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 items(accounts, key = { it.id }) { acc ->
                     val isCredit = acc.type == AccountType.CREDIT
 
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (isCredit) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface
-                        ),
-                        elevation = CardDefaults.cardElevation(2.dp)
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        shape = RoundedCornerShape(18.dp)
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
+                        Column(modifier = Modifier.padding(18.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -82,13 +93,17 @@ fun CardsScreen(
                                     Icon(
                                         imageVector = Icons.Default.CreditCard,
                                         contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary
+                                        tint = ForestGreen
                                     )
-                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Spacer(modifier = Modifier.width(10.dp))
                                     Column {
                                         Text(
                                             text = acc.nickname,
-                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                                            style = MaterialTheme.typography.titleMedium.copy(
+                                                fontFamily = FontFamily.Serif,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 17.sp
+                                            )
                                         )
                                         Text(
                                             text = "${acc.bank} · •••• ${acc.last4} (${acc.type.name})",
@@ -105,14 +120,16 @@ fun CardsScreen(
                                         AmountParser.formatPaiseToInr(acc.currentBalance)
                                     },
                                     style = MaterialTheme.typography.titleMedium.copy(
+                                        fontFamily = FontFamily.Serif,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (isCredit) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                        fontSize = 17.sp,
+                                        color = if (isCredit) MaterialTheme.colorScheme.error else ForestGreen
                                     )
                                 )
                             }
 
                             if (isCredit && acc.creditLimit != null && acc.creditLimit > 0) {
-                                Spacer(modifier = Modifier.height(12.dp))
+                                Spacer(modifier = Modifier.height(14.dp))
                                 val used = acc.outstanding ?: 0L
                                 val limit = acc.creditLimit
                                 val pct = (used.toFloat() / limit).coerceIn(0f, 1f)
@@ -130,14 +147,15 @@ fun CardsScreen(
                                         style = MaterialTheme.typography.labelSmall
                                     )
                                 }
-                                Spacer(modifier = Modifier.height(4.dp))
+                                Spacer(modifier = Modifier.height(6.dp))
                                 LinearProgressIndicator(
                                     progress = { pct },
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .height(6.dp)
-                                        .clip(RoundedCornerShape(3.dp)),
-                                    color = if (pct > 0.7f) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                        .height(4.dp)
+                                        .clip(RoundedCornerShape(2.dp)),
+                                    color = if (pct > 0.7f) MaterialTheme.colorScheme.error else ForestGreen,
+                                    trackColor = MaterialTheme.colorScheme.surface
                                 )
                             }
                         }
@@ -155,7 +173,9 @@ fun CardsScreen(
 
         AlertDialog(
             onDismissRequest = { showAddDialog = false },
-            title = { Text("Add Account or Card") },
+            title = {
+                Text("Add Account or Card", fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold)
+            },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     OutlinedTextField(

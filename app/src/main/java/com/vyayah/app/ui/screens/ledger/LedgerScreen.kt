@@ -19,11 +19,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.vyayah.app.data.model.Transaction
 import com.vyayah.app.data.model.TransactionDirection
 import com.vyayah.app.parser.AmountParser
+import com.vyayah.app.ui.theme.ForestGreen
 import org.koin.androidx.compose.koinViewModel
 import java.util.Date
 
@@ -39,12 +42,22 @@ fun LedgerScreen(
     val needsReviewCount by viewModel.needsReviewCount.collectAsState()
 
     var selectedTxnForDetail by remember { mutableStateOf<Transaction?>(null) }
+    val inkColor = MaterialTheme.colorScheme.onSurface
+    val borderColor = inkColor.copy(alpha = 0.2f)
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = {
-                    Text("Ledger", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+                    Text(
+                        "Ledger",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontFamily = FontFamily.Serif,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 28.sp
+                        )
+                    )
                 }
             )
         }
@@ -60,7 +73,7 @@ fun LedgerScreen(
                 onValueChange = { viewModel.updateSearchQuery(it) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                    .padding(horizontal = 20.dp, vertical = 4.dp),
                 placeholder = { Text("Search merchants, VPAs, senders...") },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 trailingIcon = {
@@ -71,7 +84,13 @@ fun LedgerScreen(
                     }
                 },
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    unfocusedBorderColor = borderColor,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary
+                )
             )
 
             // Category Filter Chips
@@ -79,21 +98,29 @@ fun LedgerScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
-                contentPadding = PaddingValues(horizontal = 16.dp),
+                contentPadding = PaddingValues(horizontal = 20.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 item {
                     FilterChip(
                         selected = selectedCatId == null,
                         onClick = { viewModel.selectCategory(null) },
-                        label = { Text("All") }
+                        label = { Text("All") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = inkColor,
+                            selectedLabelColor = Color.White
+                        )
                     )
                 }
                 items(categories) { cat ->
                     FilterChip(
                         selected = selectedCatId == cat.id,
                         onClick = { viewModel.selectCategory(cat.id) },
-                        label = { Text(cat.name) }
+                        label = { Text(cat.name) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = inkColor,
+                            selectedLabelColor = Color.White
+                        )
                     )
                 }
             }
@@ -103,7 +130,7 @@ fun LedgerScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                        .padding(horizontal = 20.dp, vertical = 4.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
                 ) {
                     Text(
@@ -120,7 +147,7 @@ fun LedgerScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(16.dp),
+                        .padding(20.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -132,8 +159,8 @@ fun LedgerScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     items(transactions, key = { it.transaction.id }) { item ->
                         val tx = item.transaction
@@ -144,12 +171,13 @@ fun LedgerScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable { selectedTxnForDetail = tx },
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                            shape = RoundedCornerShape(14.dp)
                         ) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(14.dp),
+                                    .padding(16.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -167,7 +195,11 @@ fun LedgerScreen(
                                     Column {
                                         Text(
                                             text = tx.merchantNorm ?: tx.sender,
-                                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
+                                            style = MaterialTheme.typography.bodyLarge.copy(
+                                                fontFamily = FontFamily.Serif,
+                                                fontWeight = FontWeight.SemiBold,
+                                                fontSize = 16.sp
+                                            )
                                         )
                                         Text(
                                             text = "$formattedDate · ${item.categoryName}",
@@ -178,10 +210,12 @@ fun LedgerScreen(
                                 }
 
                                 Text(
-                                    text = (if (isCredit) "+ " else "") + AmountParser.formatPaiseToInr(tx.amountMinor, true),
+                                    text = (if (isCredit) "+ " else "- ") + AmountParser.formatPaiseToInr(tx.amountMinor, true),
                                     style = MaterialTheme.typography.titleMedium.copy(
+                                        fontFamily = FontFamily.Serif,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (isCredit) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                        fontSize = 16.sp,
+                                        color = if (isCredit) ForestGreen else inkColor
                                     )
                                 )
                             }
@@ -197,7 +231,11 @@ fun LedgerScreen(
         AlertDialog(
             onDismissRequest = { selectedTxnForDetail = null },
             title = {
-                Text(tx.merchantNorm ?: tx.sender, fontWeight = FontWeight.Bold)
+                Text(
+                    tx.merchantNorm ?: tx.sender,
+                    fontFamily = FontFamily.Serif,
+                    fontWeight = FontWeight.Bold
+                )
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
