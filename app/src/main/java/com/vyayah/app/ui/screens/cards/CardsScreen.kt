@@ -6,14 +6,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -29,11 +30,13 @@ import org.koin.androidx.compose.koinViewModel
 fun CardsScreen(
     viewModel: CardsViewModel = koinViewModel()
 ) {
-    val accounts by viewModel.accounts.collectAsState()
-    val combinedMetrics by viewModel.combinedCardMetrics.collectAsState()
+    val summary by viewModel.summary.collectAsState()
+    val bankAccounts by viewModel.bankAccounts.collectAsState()
+    val creditCards by viewModel.creditCards.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
+
     val inkColor = MaterialTheme.colorScheme.onSurface
-    val borderColor = inkColor.copy(alpha = 0.2f)
+    val borderColor = inkColor.copy(alpha = 0.18f)
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -64,140 +67,17 @@ fun CardsScreen(
                 .padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // COMBINED CREDIT LIMIT SUMMARY CARD
-            if (combinedMetrics.cardCount > 0 && combinedMetrics.totalLimitMinor > 0) {
-                item {
+            // ================= 2-PART SUMMARY AT TOP =================
+            item {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    // PART 1 (TOP): TOTAL CREDIT & REMAINING LIMIT
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                         shape = RoundedCornerShape(20.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(20.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "COMBINED CREDIT LIMIT (${combinedMetrics.cardCount} CARDS)",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontSize = 11.sp,
-                                        letterSpacing = 1.1.sp,
-                                        color = inkColor.copy(alpha = 0.65f)
-                                    )
-                                )
-                                Text(
-                                    text = "${combinedMetrics.utilizationPercentage.toInt()}% used",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (combinedMetrics.utilizationPercentage > 50) MaterialTheme.colorScheme.error else ForestGreen
-                                    )
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(6.dp))
-
-                            // Big Combined Limit
-                            Text(
-                                text = AmountParser.formatPaiseToInr(combinedMetrics.totalLimitMinor),
-                                style = MaterialTheme.typography.headlineMedium.copy(
-                                    fontFamily = FontFamily.Serif,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 32.sp,
-                                    color = inkColor
-                                )
-                            )
-
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            // Overall Limit Utilization Bar
-                            val progressFraction = (combinedMetrics.utilizationPercentage / 100f).coerceIn(0f, 1f)
-                            LinearProgressIndicator(
-                                progress = { progressFraction },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(6.dp)
-                                    .clip(RoundedCornerShape(3.dp)),
-                                color = if (combinedMetrics.utilizationPercentage > 50) MaterialTheme.colorScheme.error else ForestGreen,
-                                trackColor = MaterialTheme.colorScheme.surface
-                            )
-
-                            Spacer(modifier = Modifier.height(14.dp))
-
-                            // Grid: Total Outstanding vs Available Credit
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Column {
-                                    Text(
-                                        text = "Total Outstanding",
-                                        style = MaterialTheme.typography.labelSmall.copy(color = inkColor.copy(alpha = 0.6f))
-                                    )
-                                    Text(
-                                        text = AmountParser.formatPaiseToInr(combinedMetrics.totalOutstandingMinor),
-                                        style = MaterialTheme.typography.bodyLarge.copy(
-                                            fontFamily = FontFamily.Serif,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.error
-                                        )
-                                    )
-                                }
-
-                                Column(horizontalAlignment = Alignment.End) {
-                                    Text(
-                                        text = "Available Credit",
-                                        style = MaterialTheme.typography.labelSmall.copy(color = inkColor.copy(alpha = 0.6f))
-                                    )
-                                    Text(
-                                        text = AmountParser.formatPaiseToInr(combinedMetrics.totalAvailableLimitMinor),
-                                        style = MaterialTheme.typography.bodyLarge.copy(
-                                            fontFamily = FontFamily.Serif,
-                                            fontWeight = FontWeight.Bold,
-                                            color = ForestGreen
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Section Header
-            item {
-                Text(
-                    text = "INDIVIDUAL ACCOUNTS & CARDS",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 11.sp,
-                        letterSpacing = 1.1.sp,
-                        color = inkColor.copy(alpha = 0.65f)
-                    )
-                )
-            }
-
-            if (accounts.isEmpty()) {
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                    ) {
-                        Text(
-                            text = "No accounts or cards logged yet.\nTap '+' above to add your bank accounts and credit cards.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(20.dp)
-                        )
-                    }
-                }
-            } else {
-                items(accounts, key = { it.id }) { acc ->
-                    val isCredit = acc.type == AccountType.CREDIT
-
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                        shape = RoundedCornerShape(16.dp)
                     ) {
                         Column(modifier = Modifier.padding(18.dp)) {
                             Row(
@@ -205,74 +85,361 @@ fun CardsScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                Text(
+                                    text = "TOTAL CREDIT LIMIT (${summary.creditCardCount} CARDS)",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 10.5.sp,
+                                        letterSpacing = 1.1.sp,
+                                        color = inkColor.copy(alpha = 0.65f)
+                                    )
+                                )
+                                Text(
+                                    text = "${summary.creditUtilizationPct.toInt()}% used",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (summary.creditUtilizationPct > 50) MaterialTheme.colorScheme.error else ForestGreen
+                                    )
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            // Big Combined Credit Limit
+                            Text(
+                                text = AmountParser.formatPaiseToInr(summary.totalCreditLimitMinor),
+                                style = MaterialTheme.typography.headlineMedium.copy(
+                                    fontFamily = FontFamily.Serif,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 30.sp,
+                                    color = inkColor
+                                )
+                            )
+
+                            // Utilization Progress Bar
+                            val progressFraction = (summary.creditUtilizationPct / 100f).coerceIn(0f, 1f)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            LinearProgressIndicator(
+                                progress = { progressFraction },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(5.dp)
+                                    .clip(RoundedCornerShape(2.5.dp)),
+                                color = if (summary.creditUtilizationPct > 50) MaterialTheme.colorScheme.error else ForestGreen,
+                                trackColor = MaterialTheme.colorScheme.surface
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // Grid: How much remaining left & Current dues
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "Remaining Credit Left",
+                                        style = MaterialTheme.typography.labelSmall.copy(color = inkColor.copy(alpha = 0.6f))
+                                    )
+                                    Text(
+                                        text = AmountParser.formatPaiseToInr(summary.totalCreditRemainingMinor),
+                                        style = MaterialTheme.typography.bodyLarge.copy(
+                                            fontFamily = FontFamily.Serif,
+                                            fontWeight = FontWeight.Bold,
+                                            color = ForestGreen
+                                        )
+                                    )
+                                }
+
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text(
+                                        text = "Total Dues",
+                                        style = MaterialTheme.typography.labelSmall.copy(color = inkColor.copy(alpha = 0.6f))
+                                    )
+                                    Text(
+                                        text = AmountParser.formatPaiseToInr(summary.totalCreditDuesMinor),
+                                        style = MaterialTheme.typography.bodyLarge.copy(
+                                            fontFamily = FontFamily.Serif,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.error
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // PART 2 (JUST BELOW): TOTAL MONEY IN BANK
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        shape = RoundedCornerShape(18.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(18.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = "TOTAL MONEY IN BANK (${summary.bankAccountCount} ACCOUNTS)",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 10.5.sp,
+                                        letterSpacing = 1.1.sp,
+                                        color = inkColor.copy(alpha = 0.65f)
+                                    )
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = AmountParser.formatPaiseToInr(summary.totalMoneyInBankMinor),
+                                    style = MaterialTheme.typography.headlineSmall.copy(
+                                        fontFamily = FontFamily.Serif,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 26.sp,
+                                        color = ForestGreen
+                                    )
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.Default.AccountBalance,
+                                contentDescription = null,
+                                tint = ForestGreen,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // ================= SECTION 1: BANK ACCOUNTS & BALANCES =================
+            item {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "BANK ACCOUNTS & BALANCES",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 11.sp,
+                        letterSpacing = 1.1.sp,
+                        color = inkColor.copy(alpha = 0.7f)
+                    )
+                )
+            }
+
+            if (bankAccounts.isEmpty()) {
+                item {
+                    Text(
+                        text = "No bank accounts added yet. They are detected from SMS or can be added via '+'.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                items(bankAccounts, key = { it.id }) { acc ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.AccountBalance,
+                                    contentDescription = null,
+                                    tint = ForestGreen,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = acc.nickname,
+                                        style = MaterialTheme.typography.titleMedium.copy(
+                                            fontFamily = FontFamily.Serif,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 16.sp
+                                        )
+                                    )
+                                    Text(
+                                        text = "${acc.bank} · •••• ${acc.last4} (${acc.type.name})",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(
+                                    text = AmountParser.formatPaiseToInr(acc.currentBalance),
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        fontFamily = FontFamily.Serif,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 17.sp,
+                                        color = ForestGreen
+                                    )
+                                )
+                                Text(
+                                    text = "Available Balance",
+                                    style = MaterialTheme.typography.labelSmall.copy(color = inkColor.copy(alpha = 0.5f))
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ================= SECTION 2: CREDIT CARDS, LIMITS, REMAINING & DUES =================
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "CREDIT CARDS (LIMIT, REMAINING & DUES)",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 11.sp,
+                        letterSpacing = 1.1.sp,
+                        color = inkColor.copy(alpha = 0.7f)
+                    )
+                )
+            }
+
+            if (creditCards.isEmpty()) {
+                item {
+                    Text(
+                        text = "No credit cards added yet. Add your cards via '+' to track limits and dues.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                items(creditCards, key = { it.id }) { card ->
+                    val limit = card.creditLimit ?: 0L
+                    val dues = card.outstanding ?: 0L
+                    val remaining = (limit - dues).coerceAtLeast(0L)
+                    val utilPct = if (limit > 0) (dues.toFloat() / limit).coerceIn(0f, 1f) else 0f
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            // Header: Card Name & Due Date
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(
-                                        imageVector = if (isCredit) Icons.Default.CreditCard else Icons.Default.AccountBalance,
+                                        imageVector = Icons.Default.CreditCard,
                                         contentDescription = null,
-                                        tint = if (isCredit) inkColor else ForestGreen
+                                        tint = inkColor,
+                                        modifier = Modifier.size(20.dp)
                                     )
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Column {
                                         Text(
-                                            text = acc.nickname,
+                                            text = card.nickname,
                                             style = MaterialTheme.typography.titleMedium.copy(
                                                 fontFamily = FontFamily.Serif,
                                                 fontWeight = FontWeight.Bold,
-                                                fontSize = 17.sp
+                                                fontSize = 16.sp
                                             )
                                         )
                                         Text(
-                                            text = "${acc.bank} · •••• ${acc.last4} (${acc.type.name})",
+                                            text = "${card.bank} · •••• ${card.last4}",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
                                 }
 
-                                Text(
-                                    text = if (isCredit && acc.outstanding != null) {
-                                        "Due: " + AmountParser.formatPaiseToInr(acc.outstanding)
-                                    } else {
-                                        AmountParser.formatPaiseToInr(acc.currentBalance)
-                                    },
-                                    style = MaterialTheme.typography.titleMedium.copy(
-                                        fontFamily = FontFamily.Serif,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 17.sp,
-                                        color = if (isCredit) MaterialTheme.colorScheme.error else ForestGreen
-                                    )
-                                )
-                            }
-
-                            if (isCredit && acc.creditLimit != null && acc.creditLimit > 0) {
-                                Spacer(modifier = Modifier.height(14.dp))
-                                val used = acc.outstanding ?: 0L
-                                val limit = acc.creditLimit
-                                val pct = (used.toFloat() / limit).coerceIn(0f, 1f)
-
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
+                                if (card.dueDay != null) {
                                     Text(
-                                        text = "Card Limit: ${AmountParser.formatPaiseToInr(limit)}",
-                                        style = MaterialTheme.typography.labelSmall
-                                    )
-                                    Text(
-                                        text = "${(pct * 100).toInt()}% used",
-                                        style = MaterialTheme.typography.labelSmall
+                                        text = "Due: ${card.dueDay}th",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.error
+                                        )
                                     )
                                 }
-                                Spacer(modifier = Modifier.height(6.dp))
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            // 3-Column Metrics: Limit | Remaining | Dues
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "Total Limit",
+                                        style = MaterialTheme.typography.labelSmall.copy(color = inkColor.copy(alpha = 0.55f))
+                                    )
+                                    Text(
+                                        text = AmountParser.formatPaiseToInr(limit),
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
+                                    )
+                                }
+
+                                Column {
+                                    Text(
+                                        text = "Remaining Left",
+                                        style = MaterialTheme.typography.labelSmall.copy(color = inkColor.copy(alpha = 0.55f))
+                                    )
+                                    Text(
+                                        text = AmountParser.formatPaiseToInr(remaining),
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = ForestGreen
+                                        )
+                                    )
+                                }
+
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text(
+                                        text = "Current Dues",
+                                        style = MaterialTheme.typography.labelSmall.copy(color = inkColor.copy(alpha = 0.55f))
+                                    )
+                                    Text(
+                                        text = AmountParser.formatPaiseToInr(dues),
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.error
+                                        )
+                                    )
+                                }
+                            }
+
+                            // Card Utilization Progress Bar
+                            if (limit > 0) {
+                                Spacer(modifier = Modifier.height(10.dp))
                                 LinearProgressIndicator(
-                                    progress = { pct },
+                                    progress = { utilPct },
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(4.dp)
                                         .clip(RoundedCornerShape(2.dp)),
-                                    color = if (pct > 0.7f) MaterialTheme.colorScheme.error else ForestGreen,
+                                    color = if (utilPct > 0.5f) MaterialTheme.colorScheme.error else ForestGreen,
                                     trackColor = MaterialTheme.colorScheme.surface
                                 )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.End
+                                ) {
+                                    Text(
+                                        text = "${(utilPct * 100).toInt()}% of limit used",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontSize = 10.sp,
+                                            color = inkColor.copy(alpha = 0.5f)
+                                        )
+                                    )
+                                }
                             }
                         }
                     }
@@ -302,7 +469,7 @@ fun CardsScreen(
                     OutlinedTextField(
                         value = bankName,
                         onValueChange = { bankName = it },
-                        label = { Text("Bank / Issuer Name (e.g. HDFC, ICICI)") },
+                        label = { Text("Bank / Issuer (e.g. HDFC, ICICI)") },
                         singleLine = true
                     )
                     OutlinedTextField(
@@ -314,7 +481,7 @@ fun CardsScreen(
                     OutlinedTextField(
                         value = balanceRupees,
                         onValueChange = { balanceRupees = it },
-                        label = { Text(if (isCreditCard) "Current Outstanding (₹)" else "Current Balance (₹)") },
+                        label = { Text(if (isCreditCard) "Current Dues (₹)" else "Available Balance (₹)") },
                         singleLine = true
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
