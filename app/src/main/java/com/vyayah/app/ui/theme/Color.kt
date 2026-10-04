@@ -4,37 +4,48 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 
-val Slate900 = Color(0xFF0F172A)
-val Slate800 = Color(0xFF1E293B)
-val Slate700 = Color(0xFF334155)
-val Emerald500 = Color(0xFF10B981)
-val Emerald600 = Color(0xFF059669)
-val Rose500 = Color(0xFFF43F5E)
-val Amber500 = Color(0xFFF59E0B)
-val Indigo500 = Color(0xFF6366F1)
+// Editorial / Newsprint Paper Palette
+val ParchmentLight = Color(0xFFF7F4EC)
+val ParchmentSurface = Color(0xFFEFECE3)
+val ParchmentBorder = Color(0xFFDCD7CA)
+val InkPrimary = Color(0xFF1B1B19)
+val InkSecondary = Color(0xFF6B6960)
+val ForestGreen = Color(0xFF1E613B)
+val LightForestGreen = Color(0xFF2E8B57)
 
-val DarkColorScheme = darkColorScheme(
-    primary = Emerald500,
-    secondary = Indigo500,
-    tertiary = Amber500,
-    background = Slate900,
-    surface = Slate800,
+// Dark Mode Palette (Ink Paper)
+val InkDark = Color(0xFF141413)
+val InkSurfaceDark = Color(0xFF20201E)
+val InkBorderDark = Color(0xFF333330)
+val PaperTextDark = Color(0xFFF5F3EC)
+val PaperTextSecondaryDark = Color(0xFF9E9B91)
+
+val PaperLightColorScheme = lightColorScheme(
+    primary = ForestGreen,
+    secondary = InkSecondary,
+    tertiary = ForestGreen,
+    background = ParchmentLight,
+    surface = ParchmentLight,
+    surfaceVariant = ParchmentSurface,
     onPrimary = Color.White,
     onSecondary = Color.White,
-    onBackground = Color(0xFFF8FAFC),
-    onSurface = Color(0xFFF8FAFC),
-    surfaceVariant = Slate700
+    onBackground = InkPrimary,
+    onSurface = InkPrimary,
+    onSurfaceVariant = InkSecondary,
+    outline = ParchmentBorder
 )
 
-val LightColorScheme = lightColorScheme(
-    primary = Emerald600,
-    secondary = Indigo500,
-    tertiary = Amber500,
-    background = Color(0xFFF8FAFC),
-    surface = Color.White,
+val PaperDarkColorScheme = darkColorScheme(
+    primary = LightForestGreen,
+    secondary = PaperTextSecondaryDark,
+    tertiary = LightForestGreen,
+    background = InkDark,
+    surface = InkDark,
+    surfaceVariant = InkSurfaceDark,
     onPrimary = Color.White,
     onSecondary = Color.White,
-    onBackground = Slate900,
-    onSurface = Slate900,
-    surfaceVariant = Color(0xFFE2E8F0)
+    onBackground = PaperTextDark,
+    onSurface = PaperTextDark,
+    onSurfaceVariant = PaperTextSecondaryDark,
+    outline = InkBorderDark
 )
