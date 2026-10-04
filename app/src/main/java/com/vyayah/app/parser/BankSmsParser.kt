@@ -30,10 +30,24 @@ object BankSmsParser {
 
     fun parse(sender: String, body: String): ParsedSmsResult? {
         val upperSender = sender.uppercase()
+        val upperBody = body.uppercase()
         val lowerBody = body.lowercase()
 
+        // Stage 1a: Bank-Specific Template Matching (Highest Precision)
+        val templateResult = when {
+            upperSender.contains("HDFC") || upperBody.contains("HDFC") -> BankTemplates.parseHdfc(sender, body)
+            upperSender.contains("SBI") || upperBody.contains("STATE BANK") -> BankTemplates.parseSbi(sender, body)
+            upperSender.contains("ICICI") || upperBody.contains("ICICI") -> BankTemplates.parseIcici(sender, body)
+            upperSender.contains("AXIS") || upperBody.contains("AXIS") -> BankTemplates.parseAxis(sender, body)
+            upperSender.contains("PAYTM") || upperBody.contains("PAYTM") -> BankTemplates.parsePaytm(sender, body)
+            else -> null
+        }
+        if (templateResult != null) return templateResult
+
+        // Stage 1b: General Regex Fallback
         // 1. Determine Bank Name
         val bankName = detectBank(upperSender, body)
+
 
         // 2. Extract UPI Reference and VPA if present
         val upiRef = UPI_REF_REGEX.find(body)?.groupValues?.get(1)

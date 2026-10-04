@@ -33,7 +33,8 @@ import java.util.Locale
 @Composable
 fun TodayScreen(
     viewModel: TodayViewModel = koinViewModel(),
-    onNavigateToSettings: () -> Unit = {}
+    onNavigateToSettings: () -> Unit = {},
+    onNavigateToBudget: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val inkColor = MaterialTheme.colorScheme.onSurface
@@ -243,7 +244,13 @@ fun TodayScreen(
 
             // WHERE IT WENT Section
             item {
-                Column(modifier = Modifier.padding(top = 8.dp)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
                         text = "WHERE IT WENT",
                         style = MaterialTheme.typography.labelSmall.copy(
@@ -252,7 +259,19 @@ fun TodayScreen(
                             color = inkColor.copy(alpha = 0.65f)
                         )
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    TextButton(
+                        onClick = onNavigateToBudget,
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text(
+                            text = "BUDGETS →",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = ForestGreen,
+                                letterSpacing = 1.sp
+                            )
+                        )
+                    }
                 }
             }
 

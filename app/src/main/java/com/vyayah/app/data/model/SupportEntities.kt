@@ -77,3 +77,34 @@ data class SyncState(
     val lastProcessedTimestamp: Long = 0L,
     val lastBackfillAt: Long = 0L
 )
+
+@Entity(tableName = "trips")
+@Serializable
+data class Trip(
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0,
+    val name: String,
+    val emoji: String = "🏖️",
+    val budgetMinor: Long, // in paise
+    val spentMinor: Long = 0L,
+    val startDate: Long? = null,
+    val endDate: Long? = null,
+    val dateRangeText: String = "",
+    val isActive: Boolean = true
+)
+
+@Entity(
+    tableName = "trip_transactions",
+    primaryKeys = ["tripId", "transactionId"],
+    indices = [
+        Index(value = ["tripId"]),
+        Index(value = ["transactionId"])
+    ]
+)
+@Serializable
+data class TripTransaction(
+    val tripId: Long,
+    val transactionId: Long,
+    val taggedAt: Long = System.currentTimeMillis()
+)
+

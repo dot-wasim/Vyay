@@ -2,13 +2,19 @@ package com.vyayah.app.ui.screens.trips
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.vyayah.app.data.local.TransactionDao
+import com.vyayah.app.data.local.TripDao
+import com.vyayah.app.data.model.Trip
+import com.vyayah.app.data.model.TripTransaction
 import com.vyayah.app.parser.AmountParser
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 data class TripTxn(
+    val id: Long = 0,
     val title: String,
     val category: String,
     val amountMinor: Long,
@@ -26,58 +32,100 @@ data class TripItem(
     val transactions: List<TripTxn>
 )
 
-class TripsViewModel : ViewModel() {
+class TripsViewModel(
+    private val tripDao: TripDao,
+    private val transactionDao: TransactionDao
+) : ViewModel() {
 
-    private val _trips = MutableStateFlow<List<TripItem>>(
-        listOf(
-            TripItem(
-                id = 1,
+    private val dateFormat = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault())
+
+    val trips: StateFlow<List<TripItem>> = tripDao.getAllTrips()
+        .map { entityList ->
+            if (entityList.isEmpty()) {
+                seedInitialTrips()
+                emptyList()
+            } else {
+                entityList.map { trip ->
+                    val txns = tripDao.getTripTransactions(trip.id).mapNotNull { tt ->
+                        transactionDao.getById(tt.transactionId)?.let { t ->
+                            TripTxn(
+                                id = t.id,
+                                title = t.merchantNorm ?: t.merchantRaw ?: "Expense",
+                                category = "Travel",
+                                amountMinor = t.amountMinor,
+                                dateText = dateFormat.format(Date(t.timestamp))
+                            )
+                        }
+                    }
+                    val totalSpent = txns.sumOf { it.amountMinor }
+                    TripItem(
+                        id = trip.id,
+                        name = trip.name,
+                        emoji = trip.emoji,
+                        dateRangeText = trip.dateRangeText.ifBlank { "Upcoming Trip" },
+                        budgetMinor = trip.budgetMinor,
+                        spentMinor = if (trip.spentMinor > 0) trip.spentMinor else totalSpent,
+                        isActive = trip.isActive,
+                        transactions = txns
+                    )
+                }
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private fun seedInitialTrips() {
+        viewModelScope.launch {
+            val initialTrip1 = Trip(
                 name = "Goa Vacation",
                 emoji = "🏖️",
-                dateRangeText = "10 Oct – 15 Oct 2026",
                 budgetMinor = 4000000L, // ₹40,000
                 spentMinor = 2480000L,  // ₹24,800
-                isActive = true,
-                transactions = listOf(
-                    TripTxn("IndiGo Airlines", "Flights & Travel", 1120000L, "10 Oct, 6:30 AM"),
-                    TripTxn("Taj Holiday Village", "Stays & Hotels", 750000L, "10 Oct, 2:00 PM"),
-                    TripTxn("Curlies Beach Shack", "Food & Drinks", 320000L, "11 Oct, 8:45 PM"),
-                    TripTxn("Goa Taxi Association", "Transport", 290000L, "11 Oct, 11:30 AM")
-                )
-            ),
-            TripItem(
-                id = 2,
+                dateRangeText = "10 Oct – 15 Oct 2026",
+                isActive = true
+            )
+            val initialTrip2 = Trip(
                 name = "Manali Road Trip",
                 emoji = "🏔️",
-                dateRangeText = "15 Aug – 20 Aug 2026",
                 budgetMinor = 3500000L, // ₹35,000
                 spentMinor = 3120000L,  // ₹31,200
-                isActive = false,
-                transactions = listOf(
-                    TripTxn("Fuel HPCL", "Transport", 850000L, "15 Aug"),
-                    TripTxn("Himalayan Resort", "Stays", 1450000L, "16 Aug"),
-                    TripTxn("Mall Road Cafe", "Food & Dining", 420000L, "17 Aug"),
-                    TripTxn("Paragliding Solang", "Activities", 400000L, "18 Aug")
-                )
+                dateRangeText = "15 Aug – 20 Aug 2026",
+                isActive = false
             )
-        )
-    )
-    val trips: StateFlow<List<TripItem>> = _trips.asStateFlow()
+            tripDao.insertTrip(initialTrip1)
+            tripDao.insertTrip(initialTrip2)
+        }
+    }
 
     fun createTrip(name: String, emoji: String, dateRange: String, budgetRupees: String) {
         viewModelScope.launch {
             val budgetMinor = AmountParser.parseToMinorUnits(budgetRupees.trim())
-            val newTrip = TripItem(
-                id = System.currentTimeMillis(),
+            val trip = Trip(
                 name = name.trim(),
                 emoji = emoji.ifBlank { "✈️" },
-                dateRangeText = dateRange.ifBlank { "Upcoming Trip" },
                 budgetMinor = budgetMinor,
                 spentMinor = 0L,
-                isActive = true,
-                transactions = emptyList()
+                dateRangeText = dateRange.ifBlank { "Upcoming Trip" },
+                isActive = true
             )
-            _trips.value = listOf(newTrip) + _trips.value
+            tripDao.insertTrip(trip)
+        }
+    }
+
+    fun tagTransactionToTrip(tripId: Long, transactionId: Long) {
+        viewModelScope.launch {
+            tripDao.tagTransaction(TripTransaction(tripId = tripId, transactionId = transactionId))
+        }
+    }
+
+    fun untagTransaction(tripId: Long, transactionId: Long) {
+        viewModelScope.launch {
+            tripDao.untagTransaction(tripId, transactionId)
+        }
+    }
+
+    fun deleteTrip(tripId: Long) {
+        viewModelScope.launch {
+            tripDao.getTripById(tripId)?.let { tripDao.deleteTrip(it) }
         }
     }
 }

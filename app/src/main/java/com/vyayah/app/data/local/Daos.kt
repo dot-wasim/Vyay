@@ -178,3 +178,42 @@ interface SyncDao {
     @Query("SELECT * FROM sync_state WHERE `key` = :key LIMIT 1")
     suspend fun getSyncState(key: String = "default_sync"): SyncState?
 }
+
+@Dao
+interface TripDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTrip(trip: Trip): Long
+
+    @Update
+    suspend fun updateTrip(trip: Trip)
+
+    @Delete
+    suspend fun deleteTrip(trip: Trip)
+
+    @Query("SELECT * FROM trips ORDER BY isActive DESC, id DESC")
+    fun getAllTrips(): Flow<List<Trip>>
+
+    @Query("SELECT * FROM trips WHERE id = :id LIMIT 1")
+    suspend fun getTripById(id: Long): Trip?
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun tagTransaction(tripTransaction: TripTransaction)
+
+    @Query("DELETE FROM trip_transactions WHERE tripId = :tripId AND transactionId = :transactionId")
+    suspend fun untagTransaction(tripId: Long, transactionId: Long)
+
+    @Query("""
+        SELECT t.* FROM transactions t
+        INNER JOIN trip_transactions tt ON t.id = tt.transactionId
+        WHERE tt.tripId = :tripId
+        ORDER BY t.timestamp DESC
+    """)
+    fun getTransactionsForTrip(tripId: Long): Flow<List<Transaction>>
+
+    @Query("SELECT * FROM trip_transactions WHERE tripId = :tripId")
+    suspend fun getTripTransactions(tripId: Long): List<TripTransaction>
+
+    @Query("UPDATE trips SET spentMinor = :spentMinor WHERE id = :tripId")
+    suspend fun updateTripSpent(tripId: Long, spentMinor: Long)
+}
+

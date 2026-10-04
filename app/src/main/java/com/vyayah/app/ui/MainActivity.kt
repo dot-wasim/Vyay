@@ -35,8 +35,9 @@ sealed class Screen(val route: String, val title: String) {
     object Today : Screen("today", "TODAY")
     object Ledger : Screen("ledger", "LEDGER")
     object Cards : Screen("cards", "CARDS")
-    object Trips : Screen("trips", "TRIPS")
     object Save : Screen("save", "SAVE")
+    object Trips : Screen("trips", "TRIPS")
+    object Budget : Screen("budget", "BUDGET")
     object Ask : Screen("ask", "ASK")
     object Settings : Screen("settings", "SETTINGS")
 }
@@ -67,7 +68,11 @@ fun MainApp() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: Screen.Today.route
 
-    var isOnboardingComplete by remember { mutableStateOf(true) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var isOnboardingComplete by remember {
+        val prefs = context.getSharedPreferences("vyayah_prefs", android.content.Context.MODE_PRIVATE)
+        mutableStateOf(prefs.getBoolean("onboarding_complete", false))
+    }
 
     val bottomNavTabs = listOf(
         Screen.Today,
@@ -153,13 +158,19 @@ fun MainApp() {
             ) {
                 composable(Screen.Today.route) {
                     TodayScreen(
-                        onNavigateToSettings = { navController.navigate(Screen.Settings.route) }
+                        onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
+                        onNavigateToBudget = { navController.navigate(Screen.Budget.route) }
                     )
                 }
                 composable(Screen.Ledger.route) { LedgerScreen() }
                 composable(Screen.Cards.route) { CardsScreen() }
                 composable(Screen.Trips.route) { com.vyayah.app.ui.screens.trips.TripsScreen() }
                 composable(Screen.Save.route) { SaveScreen() }
+                composable(Screen.Budget.route) { 
+                    com.vyayah.app.ui.screens.budget.BudgetScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    ) 
+                }
                 composable(Screen.Ask.route) { PlaceholderScreen("Ask", "Natural language queries over your local ledger using offline AI (v1.1 feature).") }
                 composable(Screen.Settings.route) { SettingsScreen() }
             }

@@ -155,4 +155,50 @@ class BankSmsParserTest {
         assertEquals(TransactionType.REVERSAL, result.type)
         assertEquals("427819283719", result.upiRef)
     }
+
+    @Test
+    fun testAxisBankDebit() {
+        val sender = "AD-AXISBK"
+        val body = "INR 720.00 debited from Axis Bank A/c no. XX1234 on 04-10-2026 14:30 towards UBER INDIA. Avl Bal INR 18,340.00."
+
+        val result = BankSmsParser.parse(sender, body)
+        assertNotNull("Should parse Axis debit", result)
+        assertEquals(72000L, result!!.amountMinor)
+        assertEquals(TransactionDirection.DEBIT, result.direction)
+        assertEquals("1234", result.accountLast4)
+        assertEquals("Axis Bank", result.bankName)
+        assertEquals(1834000L, result.availableBalanceMinor)
+    }
+
+    @Test
+    fun testPaytmUpiPayment() {
+        val sender = "VM-PAYTM"
+        val body = "Paid Rs. 45 to Sharma Kirana (UPI Ref 427811002233) from Paytm Payments Bank A/c XX5678 on 04-10-2026. Total Bal: Rs. 1,250.00."
+
+        val result = BankSmsParser.parse(sender, body)
+        assertNotNull("Should parse Paytm payment", result)
+        assertEquals(4500L, result!!.amountMinor)
+        assertEquals(TransactionDirection.DEBIT, result.direction)
+        assertEquals(PaymentInstrument.UPI, result.instrument)
+        assertEquals("5678", result.accountLast4)
+        assertEquals("Paytm Payments Bank", result.bankName)
+        assertEquals("427811002233", result.upiRef)
+        assertEquals(125000L, result.availableBalanceMinor)
+    }
+
+    @Test
+    fun testIciciCreditCardTransaction() {
+        val sender = "AD-ICICIB"
+        val body = "Your ICICI Bank Credit Card XX4002 has been used for a transaction of INR 3,199.00 at AMAZON INDIA on 04-OCT-2026. Avl Limit: INR 85,000.00."
+
+        val result = BankSmsParser.parse(sender, body)
+        assertNotNull("Should parse ICICI card transaction", result)
+        assertEquals(319900L, result!!.amountMinor)
+        assertEquals(TransactionDirection.DEBIT, result.direction)
+        assertEquals(PaymentInstrument.CARD, result.instrument)
+        assertEquals("4002", result.accountLast4)
+        assertEquals("ICICI Bank", result.bankName)
+        assertEquals(8500000L, result.availableBalanceMinor)
+    }
 }
+

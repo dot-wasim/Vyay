@@ -22,6 +22,7 @@ val appModule = module {
     single { get<VyayahDatabase>().goalDao() }
     single { get<VyayahDatabase>().ruleDao() }
     single { get<VyayahDatabase>().syncDao() }
+    single { get<VyayahDatabase>().tripDao() }
 
     // AI & Engines
     single { CategorizationEngine(get(), get()) }
@@ -31,7 +32,8 @@ val appModule = module {
     viewModel { LedgerViewModel(get(), get(), get()) }
     viewModel { CardsViewModel(get(), get()) }
     viewModel { SaveViewModel(get()) }
-    viewModel { com.vyayah.app.ui.screens.trips.TripsViewModel() }
+    viewModel { com.vyayah.app.ui.screens.trips.TripsViewModel(get(), get()) }
+    viewModel { com.vyayah.app.ui.screens.budget.BudgetViewModel(get(), get(), get()) }
     viewModel { SettingsViewModel(get(), get(), get(), get()) }
     viewModel { OnboardingViewModel(get(), get(), get()) }
 }

@@ -20,9 +20,11 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         Budget::class,
         Goal::class,
         SenderRule::class,
-        SyncState::class
+        SyncState::class,
+        Trip::class,
+        TripTransaction::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class VyayahDatabase : RoomDatabase() {
@@ -34,6 +36,8 @@ abstract class VyayahDatabase : RoomDatabase() {
     abstract fun goalDao(): GoalDao
     abstract fun ruleDao(): RuleDao
     abstract fun syncDao(): SyncDao
+    abstract fun tripDao(): TripDao
+
 
     companion object {
         private const val DB_NAME = "vyayah_encrypted.db"
@@ -59,6 +63,9 @@ abstract class VyayahDatabase : RoomDatabase() {
                 val factory = SupportOpenHelperFactory(passphrase)
                 builder.openHelperFactory(factory)
             }
+
+            builder.fallbackToDestructiveMigration()
+
 
             builder.addCallback(object : Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
