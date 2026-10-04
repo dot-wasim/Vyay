@@ -119,29 +119,52 @@ fun OnboardingScreen(
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(88.dp)
+                                .size(96.dp)
                                 .clip(CircleShape)
-                                .border(2.dp, ForestGreen, CircleShape),
+                                .border(2.5.dp, ForestGreen, CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Shield,
-                                contentDescription = null,
-                                tint = ForestGreen,
-                                modifier = Modifier.size(48.dp)
+                            Text(
+                                text = "व्यय",
+                                style = MaterialTheme.typography.headlineMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 32.sp,
+                                    color = ForestGreen
+                                )
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(20.dp))
 
-                        Text(
-                            text = "Vyayah",
-                            style = MaterialTheme.typography.headlineLarge.copy(
-                                fontFamily = FontFamily.Serif,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 42.sp
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Vyay",
+                                style = MaterialTheme.typography.headlineLarge.copy(
+                                    fontFamily = FontFamily.Serif,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 42.sp
+                                )
                             )
-                        )
+                            Surface(
+                                color = ForestGreen.copy(alpha = 0.14f),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    text = "व्यय",
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 20.sp,
+                                        color = ForestGreen
+                                    ),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
 
                         Text(
                             text = "Local SMS Expense Tracker",

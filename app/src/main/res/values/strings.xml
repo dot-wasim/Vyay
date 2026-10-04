@@ -1,3 +1,5 @@
 <resources>
-    <string name="app_name">Vyayah</string>
+    <string name="app_name">Vyay (व्यय)</string>
+    <string name="app_name_en">Vyay</string>
+    <string name="app_name_hi">व्यय</string>
 </resources>
