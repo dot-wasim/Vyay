@@ -52,7 +52,7 @@ interface TransactionDao {
     suspend fun findPotentialDebitMatchesForRefund(
         refundAmountMinor: Long,
         refundTime: Long,
-        windowMillis: Long = 60L * 24 * 60 * 60 * 1000 // 60 days
+        windowMillis: Long
     ): List<Transaction>
 
     @Query("DELETE FROM transactions")
@@ -176,7 +176,10 @@ interface SyncDao {
     suspend fun upsertSyncState(syncState: SyncState)
 
     @Query("SELECT * FROM sync_state WHERE `key` = :key LIMIT 1")
-    suspend fun getSyncState(key: String = "default_sync"): SyncState?
+    suspend fun getSyncStateByKey(key: String): SyncState?
+
+    @Query("SELECT * FROM sync_state WHERE `key` = 'default_sync' LIMIT 1")
+    suspend fun getSyncState(): SyncState?
 }
 
 @Dao
@@ -203,10 +206,9 @@ interface TripDao {
     suspend fun untagTransaction(tripId: Long, transactionId: Long)
 
     @Query("""
-        SELECT t.* FROM transactions t
-        INNER JOIN trip_transactions tt ON t.id = tt.transactionId
-        WHERE tt.tripId = :tripId
-        ORDER BY t.timestamp DESC
+        SELECT * FROM transactions
+        WHERE id IN (SELECT transactionId FROM trip_transactions WHERE tripId = :tripId)
+        ORDER BY timestamp DESC
     """)
     fun getTransactionsForTrip(tripId: Long): Flow<List<Transaction>>
 
