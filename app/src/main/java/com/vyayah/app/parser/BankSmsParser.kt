@@ -23,10 +23,10 @@ object BankSmsParser {
 
     private val UPI_REF_REGEX = Regex("(?:UPI\\s+Ref(?:\\s+no\\.?)?|Ref(?:\\s+no\\.?)?|RRN|UTR|Txn(?:\\s+Id)?|IMPS\\s+Ref)[:\\s]*([A-Za-z0-9]{6,16})", RegexOption.IGNORE_CASE)
     private val VPA_REGEX = Regex("([a-zA-Z0-9.\\-_]+@[a-zA-Z0-9]+)", RegexOption.IGNORE_CASE)
-    private val AVL_BAL_REGEX = Regex("(?:Avl(?:\\.|\\s+)?Bal(?:ance)?|Bal(?:ance)?)\\s*(?:is|:)?\\s*(?:INR|Rs\\.?|₹)?\\s*([0-9]+(?:,[0-9]+)*(?:\\.[0-9]{1,2})?)", RegexOption.IGNORE_CASE)
+    private val AVL_BAL_REGEX = Regex("(?:Avl(?:\\.|\\s+)?(?:Bal|Balance|Limit)|Available\\s+(?:Balance|Limit)|Total\\s+Bal|Bal(?:ance)?|Bal\\s+Limit)\\s*(?:is|:)?\\s*(?:INR|Rs\\.?|₹)?\\s*([0-9]+(?:,[0-9]+)*(?:\\.[0-9]{1,2})?)", RegexOption.IGNORE_CASE)
 
     // Bank account or card last 4 digits
-    private val LAST4_REGEX = Regex("(?:a/c(?: no)?|acct(?: no)?|account(?: no)?|card|ending with|ending in)\\s*(?:xx|x+|\\*+)?\\s*([0-9]{3,4})", RegexOption.IGNORE_CASE)
+    private val LAST4_REGEX = Regex("(?:a/c(?:\\s+no\\.?)?|acct(?:\\s+no\\.?)?|account(?:\\s+no\\.?)?|card(?:\\s+no\\.?)?|ending(?:\\s+(?:with|in))?)\\s*(?:xx|x+|\\*+)?\\s*([0-9]{3,4})", RegexOption.IGNORE_CASE)
 
     fun parse(sender: String, body: String): ParsedSmsResult? {
         val upperSender = sender.uppercase()

@@ -12,7 +12,7 @@ data class BankTemplate(
 object BankTemplates {
 
     private val AVL_BAL_REGEX = Regex(
-        "(?:Avl(?:\\.|\\s+)?(?:Bal|Balance)|Available\\s+Balance|Total\\s+Bal|Bal(?:ance)?|Bal\\s+Limit|Available\\s+limit)\\s*(?:is|:)?\\s*(?:INR|Rs\\.?|₹)?\\s*([0-9]+(?:,[0-9]+)*(?:\\.[0-9]{1,2})?)",
+        "(?:Avl(?:\\.|\\s+)?(?:Bal|Balance|Limit)|Available\\s+(?:Balance|Limit)|Total\\s+Bal|Bal(?:ance)?|Bal\\s+Limit)\\s*(?:is|:)?\\s*(?:INR|Rs\\.?|₹)?\\s*([0-9]+(?:,[0-9]+)*(?:\\.[0-9]{1,2})?)",
         RegexOption.IGNORE_CASE
     )
 
@@ -27,7 +27,7 @@ object BankTemplates {
     )
 
     private val LAST4_REGEX = Regex(
-        "(?:a/c(?:\\s+no)?|acct(?:\\s+no)?|account(?:\\s+no)?|card(?:\\s+no)?|ending\\s+with|ending\\s+in)\\s*(?:xx|x+|\\*+)?\\s*([0-9]{3,4})",
+        "(?:a/c(?:\\s+no\\.?)?|acct(?:\\s+no\\.?)?|account(?:\\s+no\\.?)?|card(?:\\s+no\\.?)?|ending(?:\\s+(?:with|in))?)\\s*(?:xx|x+|\\*+)?\\s*([0-9]{3,4})",
         RegexOption.IGNORE_CASE
     )
 
@@ -178,7 +178,7 @@ object BankTemplates {
         val b = body.uppercase()
         if (!s.contains("ICICI")) return null
 
-        val isCard = b.contains("CREDIT CARD") || b.contains("DEBIT CARD")
+        val isCard = b.contains("CARD")
         val isUpi = b.contains("UPI") || VPA_REGEX.containsMatchIn(body)
 
         val instrument = when {
@@ -241,7 +241,7 @@ object BankTemplates {
         val b = body.uppercase()
         if (!s.contains("AXIS")) return null
 
-        val isCard = b.contains("CARD NO") || b.contains("CREDIT CARD")
+        val isCard = b.contains("CARD")
         val isUpi = b.contains("UPI") || VPA_REGEX.containsMatchIn(body)
 
         val instrument = when {
@@ -258,6 +258,7 @@ object BankTemplates {
 
         val direction = if (b.contains("CREDITED") || b.contains("REFUND")) TransactionDirection.CREDIT else TransactionDirection.DEBIT
         val type = when {
+            b.contains("ATM") || b.contains("WITHDRAWAL") -> TransactionType.ATM
             b.contains("REFUND") -> TransactionType.REFUND
             b.contains("CREDITED") -> TransactionType.INCOME
             else -> TransactionType.PURCHASE
@@ -343,7 +344,7 @@ object BankTemplates {
 
     private fun extractSbiMerchant(body: String, type: TransactionType): String? {
         if (type == TransactionType.ATM) return "SBI ATM Cash"
-        val regex = Regex("(?:at\\s+|transfer(?:red)?\\s+to\\s+VPA\\s+|transferred\\s+to\\s+)([A-Za-z0-9.\\-_*@ ]+?)(?:\\s*\\(|\\s*\\.|\\s+on|\$)", RegexOption.IGNORE_CASE)
+        val regex = Regex("(?:at\\s+|transfer(?:red)?\\s+to\\s+(?:VPA\\s+)?|to\\s+)([A-Za-z0-9.\\-_*@ ]+?)(?:\\s+Ref|\\s*\\(|\\s*\\.|\\s+on|\$)", RegexOption.IGNORE_CASE)
         return regex.find(body)?.groupValues?.get(1)?.trim()
     }
 }
