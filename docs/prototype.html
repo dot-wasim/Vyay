@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vyay (व्यय) - UI Prototype</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=Inter:wght@400;500;600;700&display=swap');
+
+    .font-serif {
+      font-family: 'Newsreader', Georgia, serif;
+    }
+    .font-sans {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    :root {
+      --bg-paper: #EEF4F9;
+      --surface-paper: #E2EDF6;
+      --ink-primary: #142130;
+      --ink-secondary: #5A788F;
+      --forest-green: #1A6B55;
+      --accent: #1B5FA8;
+      --border-paper: #C4D8E8;
+    }
+
+    body {
+      background-color: #D1E3EF;
+      color: var(--ink-primary);
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .phone-container {
+      background-color: var(--bg-paper);
+      box-shadow: 0 25px 50px -12px rgba(20, 50, 80, 0.28), 0 0 0 1px rgba(20, 50, 80, 0.1);
+    }
+
+    .hatch-pattern {
+      background: repeating-linear-gradient(
+        -45deg,
+        rgba(20, 33, 48, 0.14),
+        rgba(20, 33, 48, 0.14) 1px,
+        transparent 1px,
+        transparent 6px
+      );
+    }
+
+    .dotted-leader {
+      border-bottom: 1.5px dotted rgba(20, 33, 48, 0.25);
+      flex-grow: 1;
+      height: 12px;
+      margin: 0 8px;
+    }
+    /* Large transparent ₹ watermark — INSIDE phone */
+    .rupee-watermark {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: 'Newsreader', Georgia, serif;
+      font-size: 340px;
+      font-weight: 700;
+      color: rgba(27, 95, 168, 0.07);
+      pointer-events: none;
+      user-select: none;
+      line-height: 1;
+      z-index: 0;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body class="p-4 md:p-8 flex justify-center items-center min-h-screen">
+
+  <!-- Phone Mockup Device -->
+  <div class="phone-container w-full max-w-[410px] min-h-[850px] rounded-[44px] overflow-hidden flex flex-col relative border-[6px] border-[#1A3550]">
+
+    <!-- ₹ Watermark — sits inside the phone, behind all content -->
+    <div class="rupee-watermark" aria-hidden="true">₹</div>
+
+    <!-- Android Status Bar -->
+    <div class="pt-4 px-6 pb-2 flex justify-between items-center text-xs text-[var(--ink-primary)] select-none">
+      <span class="font-semibold tracking-tight text-[13px]">5:36</span>
+      <div class="flex items-center space-x-2">
+        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L12 22l7.03-4.39C20.26 16.07 21 14.12 21 12c0-4.97-4.03-9-9-9z"/></svg>
+        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 4C7.31 4 3.07 5.9 0 8.98L12 21 24 8.98C20.93 5.9 16.69 4 12 4z"/></svg>
+        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M17 4h-3V2h-4v2H7v18h10V4z"/></svg>
+      </div>
+    </div>
+
+    <!-- MAIN SCROLLABLE CONTENT AREA -->
+    <div id="content-container" class="flex-1 overflow-y-auto px-5 pb-6">
+
+      <!-- ================= SCREEN 1: TODAY ================= -->
+      <div id="screen-today" class="screen-view">
+        
+        <!-- Header Bar -->
+        <div class="pt-3 pb-2 flex justify-between items-center">
+          <div class="flex items-center space-x-2.5">
+            <!-- App Logo Badge with Devanagari व्यय -->
+            <div class="w-8 h-8 rounded-xl bg-[var(--forest-green)] text-white flex items-center justify-center font-bold text-xs tracking-tight shadow-sm border border-[rgba(255,255,255,0.2)]">
+              व्यय
+            </div>
+            <div class="flex items-baseline space-x-2">
+              <h1 class="font-serif text-3xl font-bold tracking-tight text-[var(--ink-primary)]">Vyay</h1>
+              <span class="text-xs font-bold text-[var(--forest-green)] tracking-wider px-1.5 py-0.5 rounded-md bg-[rgba(26,107,85,0.12)]">व्यय</span>
+            </div>
+          </div>
+          <div class="flex items-center space-x-2.5">
+            <!-- Eye Toggle Button -->
+            <button id="toggle-eye-btn" class="w-9 h-9 rounded-full border border-[var(--border-paper)] flex items-center justify-center hover:bg-[var(--surface-paper)] active:scale-95 transition">
+              <span id="eye-icon" class="text-sm">👁️</span>
+            </button>
+            <!-- Add Button -->
+            <button onclick="openModal('modal-add-missed')" class="w-9 h-9 rounded-full border border-[var(--border-paper)] flex items-center justify-center hover:bg-[var(--surface-paper)] active:scale-95 transition" title="Add missed transaction">
+              <span class="text-base font-semibold leading-none text-[var(--ink-primary)]">+</span>
+            </button>
+            <!-- Settings Button with Badge -->
+            <button onclick="switchTab('settings')" class="w-9 h-9 rounded-full border border-[var(--border-paper)] flex items-center justify-center relative hover:bg-[var(--surface-paper)] active:scale-95 transition">
+              <span class="text-sm">⚙️</span>
+              <span class="absolute -top-1 -right-1 w-4 h-4 bg-[#D9483B] text-white text-[10px] font-bold rounded-full flex items-center justify-center">1</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Subtitle & Double Rule -->
+        <div class="mt-1">
+          <div class="flex justify-between items-center text-[10.5px] tracking-[1.4px] font-bold text-[var(--ink-secondary)] uppercase">
+            <span>SUNDAY, OCTOBER 4</span>
+            <span>FOR WASIM</span>
+          </div>
+          <div class="mt-2 border-b border-[var(--border-paper)]"></div>
+          <div class="mt-[2px] border-b border-[var(--border-paper)]"></div>
+        </div>
+
+        <!-- Spend & Pacing Header -->
+        <div class="mt-5">
+          <div class="text-[10.5px] tracking-[1.3px] font-bold text-[var(--ink-secondary)] uppercase">
+            OCTOBER · 27 DAYS LEFT
+          </div>
+          <div class="font-serif italic text-lg text-[var(--ink-primary)] mt-1.5">
+            You've spent
+          </div>
+          <!-- Big Spend Amount -->
+          <div class="font-serif font-bold text-[42px] leading-tight text-[var(--ink-primary)] mt-1 tracking-tight">
+            <span class="font-serif">₹</span> <span class="hideable-amount" data-real="18,450">••••</span>
+          </div>
+          <!-- Pacing Indicator -->
+          <div class="font-serif italic text-[15px] text-[var(--forest-green)] mt-1">
+            — 4% behind September's pace.
+          </div>
+        </div>
+
+        <!-- Cumulative Spend Chart -->
+        <div class="mt-5 pt-2">
+          <!-- Legend -->
+          <div class="flex items-center space-x-6 text-xs text-[var(--ink-secondary)]">
+            <div class="flex items-center space-x-2">
+              <div class="w-4 h-2.5 border border-[var(--ink-primary)] hatch-pattern"></div>
+              <span class="text-[11px] font-medium text-[var(--ink-primary)]">October</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <div class="w-5 border-b-2 border-dotted border-[var(--ink-primary)]"></div>
+              <span class="text-[11px] font-medium text-[var(--ink-secondary)]">September</span>
+            </div>
+          </div>
+
+          <!-- Chart Visual (Canvas + Hatch SVG) -->
+          <div class="relative w-full h-[120px] mt-2">
+            <svg class="w-full h-full" viewBox="0 0 350 110" preserveAspectRatio="none">
+              <line x1="0" y1="95" x2="350" y2="95" stroke="#1A1A18" stroke-width="1.2" />
+              <line x1="10" y1="95" x2="10" y2="100" stroke="#1A1A18" stroke-width="1" />
+              <line x1="88" y1="95" x2="88" y2="100" stroke="#1A1A18" stroke-width="1" />
+              <line x1="166" y1="95" x2="166" y2="100" stroke="#1A1A18" stroke-width="1" />
+              <line x1="244" y1="95" x2="244" y2="100" stroke="#1A1A18" stroke-width="1" />
+              <line x1="322" y1="95" x2="322" y2="100" stroke="#1A1A18" stroke-width="1" />
+
+              <path d="M 0 85 C 60 78, 120 55, 180 40 C 240 28, 300 20, 340 18" 
+                    fill="none" stroke="#6B685F" stroke-width="1.8" stroke-dasharray="3,4" />
+
+              <defs>
+                <pattern id="diagHatch" patternUnits="userSpaceOnUse" width="6" height="6">
+                  <path d="M-1,1 l2,-2 M0,6 l6,-6 M5,7 l2,-2" stroke="#1A1A18" stroke-width="1" opacity="0.25" />
+                </pattern>
+              </defs>
+              <polygon points="0,95 0,82 45,80 45,95" fill="url(#diagHatch)" stroke="none" />
+
+              <line x1="0" y1="82" x2="45" y2="80" stroke="#1A1A18" stroke-width="2" />
+              <line x1="45" y1="80" x2="45" y2="95" stroke="#1A1A18" stroke-width="1" opacity="0.4" />
+              <circle cx="45" cy="80" r="3.5" fill="#1E613B" />
+              <line x1="52" y1="80" x2="72" y2="80" stroke="#1E613B" stroke-width="2" stroke-dasharray="3,3" />
+            </svg>
+
+            <div class="flex justify-between text-[11px] text-[var(--ink-secondary)] mt-0.5 px-1 font-sans">
+              <span>1</span>
+              <span>8</span>
+              <span>15</span>
+              <span>22</span>
+              <span>29</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Financial Summary Grid (INCOME strictly from Bank Credits, not cards) -->
+        <div class="mt-4 border-t border-b border-[var(--border-paper)] py-3">
+          <div class="grid grid-cols-3 divide-x divide-[var(--border-paper)] text-left">
+            <div class="pr-2">
+              <div class="text-[10px] tracking-[1.2px] font-bold text-[var(--ink-secondary)] uppercase">INCOME (BANK)</div>
+              <div class="font-serif font-bold text-base text-[var(--forest-green)] mt-1">
+                ₹ <span class="hideable-amount" data-real="85,000">••••</span>
+              </div>
+            </div>
+            <div class="px-3">
+              <div class="text-[10px] tracking-[1.2px] font-bold text-[var(--ink-secondary)] uppercase">NET</div>
+              <div class="font-serif font-bold text-base text-[var(--forest-green)] mt-1">
+                ₹ <span class="hideable-amount" data-real="66,550">••••</span>
+              </div>
+            </div>
+            <div class="pl-3">
+              <div class="text-[10px] tracking-[1.2px] font-bold text-[var(--ink-secondary)] uppercase">SAVED</div>
+              <div class="font-serif font-bold text-base text-[var(--ink-primary)] mt-1">
+                77%
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- WHERE IT WENT Section -->
+        <div class="mt-5">
+          <div class="text-[10.5px] tracking-[1.3px] font-bold text-[var(--ink-secondary)] uppercase">
+            WHERE IT WENT
+          </div>
+
+          <!-- Category Breakdown Items -->
+          <div class="mt-3 space-y-4">
+            <div class="group cursor-pointer" onclick="switchTab('ledger', 'Rent')">
+              <div class="flex items-center text-sm">
+                <span class="font-serif font-medium text-[15px] text-[var(--ink-primary)]">Rent</span>
+                <span class="dotted-leader"></span>
+                <span class="font-serif font-semibold text-[14px]"><span class="hideable-amount" data-real="₹ 15,000">••••</span></span>
+                <span class="text-xs text-[var(--ink-secondary)] ml-3 w-8 text-right font-medium">95%</span>
+              </div>
+              <div class="w-full bg-[rgba(26,26,24,0.12)] h-[2px] mt-1.5">
+                <div class="bg-[var(--ink-primary)] h-[2px] w-[95%]"></div>
+              </div>
+            </div>
+
+            <div class="group cursor-pointer" onclick="switchTab('ledger', 'Food & Dining')">
+              <div class="flex items-center text-sm">
+                <span class="font-serif font-medium text-[15px] text-[var(--ink-primary)]">Food & Dining</span>
+                <span class="dotted-leader"></span>
+                <span class="font-serif font-semibold text-[14px]"><span class="hideable-amount" data-real="₹ 2,120">••••</span></span>
+                <span class="text-xs text-[var(--ink-secondary)] ml-3 w-8 text-right font-medium">4%</span>
+              </div>
+              <div class="w-full bg-[rgba(26,26,24,0.12)] h-[2px] mt-1.5">
+                <div class="bg-[var(--ink-primary)] h-[2px] w-[4%]"></div>
+              </div>
+            </div>
+
+            <div class="group cursor-pointer" onclick="switchTab('ledger', 'Groceries')">
+              <div class="flex items-center text-sm">
+                <span class="font-serif font-medium text-[15px] text-[var(--ink-primary)]">Groceries</span>
+                <span class="dotted-leader"></span>
+                <span class="font-serif font-semibold text-[14px]"><span class="hideable-amount" data-real="₹ 890">••••</span></span>
+                <span class="text-xs text-[var(--ink-secondary)] ml-3 w-8 text-right font-medium">1%</span>
+              </div>
+              <div class="w-full bg-[rgba(26,26,24,0.12)] h-[2px] mt-1.5">
+                <div class="bg-[var(--ink-primary)] h-[2px] w-[1%]"></div>
+              </div>
+            </div>
+
+            <div class="group cursor-pointer" onclick="switchTab('ledger', 'Subscriptions')">
+              <div class="flex items-center text-sm">
+                <span class="font-serif font-medium text-[15px] text-[var(--ink-primary)]">Subscriptions</span>
+                <span class="dotted-leader"></span>
+                <span class="font-serif font-semibold text-[14px]"><span class="hideable-amount" data-real="₹ 440">••••</span></span>
+                <span class="text-xs text-[var(--ink-secondary)] ml-3 w-8 text-right font-medium">0%</span>
+              </div>
+              <div class="w-full bg-[rgba(26,26,24,0.12)] h-[2px] mt-1.5">
+                <div class="bg-[var(--ink-primary)] h-[2px] w-[0.5%]"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-8 text-center text-xs text-[var(--forest-green)] font-medium">
+          ● Last SMS processed: 2 min ago (Local only)
+        </div>
+
+      </div>
+
+      <!-- ================= SCREEN 2: LEDGER ================= -->
+      <div id="screen-ledger" class="screen-view hidden">
+        <div class="pt-3 pb-2 flex justify-between items-center">
+          <h1 class="font-serif text-3xl font-bold tracking-tight text-[var(--ink-primary)]">Ledger</h1>
+          <button onclick="openModal('modal-add-missed')" class="text-xs bg-[var(--ink-primary)] text-white px-3 py-1.5 rounded-full font-medium flex items-center space-x-1">
+            <span>+ Add Missed</span>
+          </button>
+        </div>
+        <div class="mt-1 border-b border-[var(--border-paper)]"></div>
+
+        <!-- Filter Chips -->
+        <div class="flex space-x-2 overflow-x-auto py-3 text-xs scrollbar-none">
+          <button class="px-3 py-1 rounded-full bg-[var(--ink-primary)] text-white font-medium">All</button>
+          <button class="px-3 py-1 rounded-full border border-[var(--border-paper)] text-[var(--ink-secondary)]">Food</button>
+          <button class="px-3 py-1 rounded-full border border-[var(--border-paper)] text-[var(--ink-secondary)]">Groceries</button>
+          <button class="px-3 py-1 rounded-full border border-[var(--border-paper)] text-[var(--ink-secondary)]">UPI Only</button>
+        </div>
+
+        <!-- Transaction List -->
+        <div id="ledger-txn-list" class="space-y-3 mt-1">
+          <!-- Item 1 -->
+          <div class="p-3.5 bg-[var(--surface-paper)] rounded-xl border border-[var(--border-paper)] flex justify-between items-center cursor-pointer hover:border-[var(--ink-primary)] transition"
+               onclick="showSmsAudit(this, 'Swiggy', 'Food & Dining', '-₹ 450.00', 'Sent Rs.450.00 from HDFC Bank A/C **1234 to SWIGGY on 04-10-26. UPI Ref 427819283719. Bal Rs.14,500.00.')">
+            <div>
+              <div class="txn-title font-serif font-bold text-base text-[var(--ink-primary)]">Swiggy</div>
+              <div class="text-[11px] text-[var(--ink-secondary)] mt-0.5">Today, 2:15 PM · UPI · Food & Dining</div>
+            </div>
+            <div class="font-serif font-bold text-base text-[var(--ink-primary)]">-₹ 450.00</div>
+          </div>
+
+          <!-- Item 2 -->
+          <div class="p-3.5 bg-[var(--surface-paper)] rounded-xl border border-[var(--border-paper)] flex justify-between items-center cursor-pointer hover:border-[var(--ink-primary)] transition"
+               onclick="showSmsAudit(this, 'Blinkit', 'Groceries', '-₹ 320.00', 'Dear UPI user A/C 4567 debited by 320.0 on 04Oct26 by transfer to VPA blinkit@icici (Ref no 427811902831).')">
+            <div>
+              <div class="txn-title font-serif font-bold text-base text-[var(--ink-primary)]">Blinkit</div>
+              <div class="text-[11px] text-[var(--ink-secondary)] mt-0.5">Today, 10:40 AM · UPI · Groceries</div>
+            </div>
+            <div class="font-serif font-bold text-base text-[var(--ink-primary)]">-₹ 320.00</div>
+          </div>
+
+          <!-- Item 3: Salary Credit (Bank Only) -->
+          <div class="p-3.5 bg-[var(--surface-paper)] rounded-xl border border-[var(--border-paper)] flex justify-between items-center cursor-pointer hover:border-[var(--ink-primary)] transition"
+               onclick="showSmsAudit(this, 'Salary Credit (Bank)', 'Income', '+₹ 85,000.00', 'Your A/C 4567 is credited by Rs 85,000.00 on 01-10-26 by Salary Payroll Ref 98218731. Avl Bal Rs 1,42,300.00.')">
+            <div>
+              <div class="txn-title font-serif font-bold text-base text-[var(--ink-primary)]">Salary Credit (Bank)</div>
+              <div class="text-[11px] text-[var(--ink-secondary)] mt-0.5">01 Oct · Bank NEFT · Income</div>
+            </div>
+            <div class="font-serif font-bold text-base text-[var(--forest-green)]">+₹ 85,000.00</div>
+          </div>
+
+          <!-- Item 4: Refund -->
+          <div class="p-3.5 bg-[var(--surface-paper)] rounded-xl border border-[var(--border-paper)] flex justify-between items-center cursor-pointer hover:border-[var(--ink-primary)] transition"
+               onclick="showSmsAudit(this, 'Zomato Refund', 'Food & Dining', '+₹ 1,999.00', 'Refund of INR 1,999.00 credited to ICICI Bank Card XX4321 on 02-Oct-26 from ZOMATO. Avl Bal INR 85,000.00.')">
+            <div>
+              <div class="txn-title font-serif font-bold text-base text-[var(--ink-primary)]">Zomato Refund</div>
+              <div class="text-[11px] text-[var(--ink-secondary)] mt-0.5">02 Oct · Card · Reversal / Spend Reduction</div>
+            </div>
+            <div class="font-serif font-bold text-base text-[var(--forest-green)]">+₹ 1,999.00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= SCREEN 3: CARDS ================= -->
+      <div id="screen-cards" class="screen-view hidden">
+        <div class="pt-3 pb-2 flex justify-between items-center">
+          <h1 class="font-serif text-3xl font-bold tracking-tight text-[var(--ink-primary)]">Accounts & Cards</h1>
+          <button onclick="openModal('modal-add-acc')" class="text-xs bg-[var(--ink-primary)] text-white px-3 py-1.5 rounded-full font-medium">+ Add Account</button>
+        </div>
+        <div class="mt-1 border-b border-[var(--border-paper)]"></div>
+
+        <div class="space-y-4 mt-4">
+
+          <!-- 2-PART SUMMARY AT TOP -->
+          <div class="space-y-2.5">
+            <!-- PART 1: TOTAL CREDIT & REMAINING LIMIT -->
+            <div class="p-5 bg-[var(--surface-paper)] rounded-2xl border border-[var(--border-paper)] shadow-sm">
+              <div class="flex justify-between items-center">
+                <span class="text-[10px] tracking-[1.2px] font-bold text-[var(--ink-secondary)] uppercase">TOTAL CREDIT LIMIT (2 CARDS)</span>
+                <span class="text-xs font-bold text-[var(--forest-green)]">10% used</span>
+              </div>
+              <div class="font-serif font-bold text-3xl text-[var(--ink-primary)] mt-1.5">
+                ₹ 2,75,000.00
+              </div>
+              
+              <!-- Utilization progress bar -->
+              <div class="w-full bg-[rgba(26,26,24,0.12)] h-2 rounded-full mt-3 overflow-hidden">
+                <div class="bg-[var(--forest-green)] h-full w-[10%]"></div>
+              </div>
+
+              <!-- Grid: Remaining vs Dues -->
+              <div class="grid grid-cols-2 gap-4 mt-3 pt-3 border-t border-[var(--border-paper)]">
+                <div>
+                  <div class="text-[10px] text-[var(--ink-secondary)] uppercase font-semibold">Remaining Credit Left</div>
+                  <div class="font-serif font-bold text-lg text-[var(--forest-green)] mt-0.5">₹ 2,46,600.00</div>
+                </div>
+                <div class="text-right">
+                  <div class="text-[10px] text-[var(--ink-secondary)] uppercase font-semibold">Total Dues</div>
+                  <div class="font-serif font-bold text-lg text-red-600 mt-0.5">₹ 28,400.00</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PART 2: TOTAL MONEY IN BANK -->
+            <div class="p-4 bg-[var(--surface-paper)] rounded-2xl border border-[var(--border-paper)] flex justify-between items-center">
+              <div>
+                <span class="text-[10px] tracking-[1.2px] font-bold text-[var(--ink-secondary)] uppercase">TOTAL MONEY IN BANK (2 ACCOUNTS)</span>
+                <div class="font-serif font-bold text-2xl text-[var(--forest-green)] mt-0.5">
+                  ₹ 1,27,500.00
+                </div>
+              </div>
+              <span class="text-2xl">🏦</span>
+            </div>
+          </div>
+
+          <!-- SECTION 1: LIST OF BANKS AND THEIR BALANCE -->
+          <div class="pt-2">
+            <div class="text-[10.5px] tracking-[1.2px] font-bold text-[var(--ink-secondary)] uppercase mb-2.5">
+              BANK ACCOUNTS & BALANCES
+            </div>
+            
+            <div class="space-y-2.5">
+              <!-- Bank 1: HDFC -->
+              <div class="p-4 bg-[var(--surface-paper)] rounded-2xl border border-[var(--border-paper)] flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                  <span class="text-xl">🏛️</span>
+                  <div>
+                    <h3 class="font-serif text-base font-bold text-[var(--ink-primary)]">HDFC Bank</h3>
+                    <p class="text-xs text-[var(--ink-secondary)]">Salary A/C •• 1234</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="font-serif font-bold text-lg text-[var(--forest-green)]">₹ 42,500.00</div>
+                  <span class="text-[10px] text-[var(--ink-secondary)] uppercase">Available Bal</span>
+                </div>
+              </div>
+
+              <!-- Bank 2: SBI -->
+              <div class="p-4 bg-[var(--surface-paper)] rounded-2xl border border-[var(--border-paper)] flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                  <span class="text-xl">🏛️</span>
+                  <div>
+                    <h3 class="font-serif text-base font-bold text-[var(--ink-primary)]">State Bank of India</h3>
+                    <p class="text-xs text-[var(--ink-secondary)]">Savings A/C •• 5678</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="font-serif font-bold text-lg text-[var(--forest-green)]">₹ 85,000.00</div>
+                  <span class="text-[10px] text-[var(--ink-secondary)] uppercase">Available Bal</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 2: LIST OF CREDIT CARDS, LIMITS, REMAINING & DUES -->
+          <div class="pt-2">
+            <div class="text-[10.5px] tracking-[1.2px] font-bold text-[var(--ink-secondary)] uppercase mb-2.5">
+              CREDIT CARDS (LIMIT, REMAINING & DUES)
+            </div>
+
+            <div class="space-y-3">
+              <!-- Card 1: ICICI -->
+              <div class="p-4 bg-[var(--surface-paper)] rounded-2xl border border-[var(--border-paper)]">
+                <div class="flex justify-between items-start">
+                  <div class="flex items-center space-x-2.5">
+                    <span class="text-xl">💳</span>
+                    <div>
+                      <h3 class="font-serif text-base font-bold text-[var(--ink-primary)]">ICICI Amazon Pay •• 9876</h3>
+                      <p class="text-xs text-[var(--ink-secondary)]">Due 18 Oct</p>
+                    </div>
+                  </div>
+                  <span class="text-xs font-semibold text-[var(--ink-secondary)]">8% used</span>
+                </div>
+
+                <!-- 3 Metrics: Limit | Remaining | Dues -->
+                <div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-[var(--border-paper)] text-xs">
+                  <div>
+                    <div class="text-[10px] text-[var(--ink-secondary)] uppercase">Total Limit</div>
+                    <div class="font-semibold text-[var(--ink-primary)] mt-0.5">₹ 1,50,000</div>
+                  </div>
+                  <div>
+                    <div class="text-[10px] text-[var(--ink-secondary)] uppercase">Remaining</div>
+                    <div class="font-bold text-[var(--forest-green)] mt-0.5">₹ 1,37,600</div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-[10px] text-[var(--ink-secondary)] uppercase">Dues</div>
+                    <div class="font-bold text-red-600 mt-0.5">₹ 12,400</div>
+                  </div>
+                </div>
+
+                <div class="w-full bg-[rgba(26,26,24,0.12)] h-1.5 rounded-full mt-2.5 overflow-hidden">
+                  <div class="bg-[var(--forest-green)] h-full w-[8%]"></div>
+                </div>
+              </div>
+
+              <!-- Card 2: Axis -->
+              <div class="p-4 bg-[var(--surface-paper)] rounded-2xl border border-[var(--border-paper)]">
+                <div class="flex justify-between items-start">
+                  <div class="flex items-center space-x-2.5">
+                    <span class="text-xl">💳</span>
+                    <div>
+                      <h3 class="font-serif text-base font-bold text-[var(--ink-primary)]">Axis Flipkart •• 4512</h3>
+                      <p class="text-xs text-[var(--ink-secondary)]">Due 24 Oct</p>
+                    </div>
+                  </div>
+                  <span class="text-xs font-semibold text-[var(--ink-secondary)]">12% used</span>
+                </div>
+
+                <!-- 3 Metrics: Limit | Remaining | Dues -->
+                <div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-[var(--border-paper)] text-xs">
+                  <div>
+                    <div class="text-[10px] text-[var(--ink-secondary)] uppercase">Total Limit</div>
+                    <div class="font-semibold text-[var(--ink-primary)] mt-0.5">₹ 1,25,000</div>
+                  </div>
+                  <div>
+                    <div class="text-[10px] text-[var(--ink-secondary)] uppercase">Remaining</div>
+                    <div class="font-bold text-[var(--forest-green)] mt-0.5">₹ 1,09,000</div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-[10px] text-[var(--ink-secondary)] uppercase">Dues</div>
+                    <div class="font-bold text-red-600 mt-0.5">₹ 16,000</div>
+                  </div>
+                </div>
+
+                <div class="w-full bg-[rgba(26,26,24,0.12)] h-1.5 rounded-full mt-2.5 overflow-hidden">
+                  <div class="bg-[var(--forest-green)] h-full w-[12%]"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ================= SCREEN 4: SAVE ================= -->
+      <div id="screen-save" class="screen-view hidden">
+        <div class="pt-3 pb-2 flex justify-between items-center">
+          <h1 class="font-serif text-3xl font-bold tracking-tight text-[var(--ink-primary)]">Savings Goals</h1>
+          <button onclick="openModal('modal-add-goal')" class="text-xs bg-[var(--ink-primary)] text-white px-3 py-1 rounded-full font-medium">+ Goal</button>
+        </div>
+        <div class="mt-1 border-b border-[var(--border-paper)]"></div>
+
+        <div class="space-y-4 mt-4">
+          <div class="p-4 bg-[var(--surface-paper)] rounded-2xl border border-[var(--border-paper)]">
+            <div class="flex justify-between items-center">
+              <div class="flex items-center space-x-2.5">
+                <span class="text-2xl">📱</span>
+                <div>
+                  <h3 class="font-serif text-lg font-bold text-[var(--ink-primary)]">New iPhone</h3>
+                  <div class="text-xs text-[var(--ink-secondary)]">Target: Dec 2026</div>
+                </div>
+              </div>
+              <span class="font-serif font-bold text-base text-[var(--forest-green)]">65%</span>
+            </div>
+            <div class="w-full bg-[rgba(26,26,24,0.12)] h-2 rounded-full mt-3 overflow-hidden">
+              <div class="bg-[var(--forest-green)] h-full w-[65%]"></div>
+            </div>
+            <div class="flex justify-between text-xs text-[var(--ink-secondary)] mt-2">
+              <span>Saved: <strong class="text-[var(--ink-primary)]">₹ 65,000</strong></span>
+              <span>Target: ₹ 1,00,000</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= SCREEN 4: TRIPS ================= -->
+      <div id="screen-trips" class="screen-view hidden">
+        <div class="pt-3 pb-2 flex justify-between items-center">
+          <h1 class="font-serif text-3xl font-bold tracking-tight text-[var(--ink-primary)]">Trips &amp; Vacations</h1>
+          <button onclick="openModal('modal-add-trip')" class="text-xs bg-[var(--ink-primary)] text-white px-3 py-1 rounded-full font-medium">+ Trip</button>
+        </div>
+        <div class="mt-1">
+          <div class="flex justify-between items-center text-[10.5px] tracking-[1.4px] font-bold text-[var(--ink-secondary)] uppercase">
+            <span>ISOLATED TRAVEL BUDGETS</span>
+            <span>NO HOME DRIFT</span>
+          </div>
+          <div class="mt-2 border-b border-[var(--border-paper)]"></div>
+        </div>
+
+        <!-- Privacy & Budgeting notice -->
+        <div class="mt-4 p-3 bg-[var(--surface-paper)] rounded-xl border border-[var(--border-paper)] text-xs text-[var(--ink-secondary)] flex items-start space-x-2.5">
+          <span class="text-base">🏝️</span>
+          <p class="leading-relaxed">
+            Spends tagged here won't pollute your normal monthly groceries and dining home budgets.
+          </p>
+        </div>
+
+        <!-- Active Trip Card -->
+        <div class="mt-4 p-4 bg-[var(--surface-paper)] rounded-2xl border-2 border-[var(--ink-primary)] shadow-sm">
+          <div class="flex justify-between items-start">
+            <div>
+              <span class="text-[10px] tracking-wider uppercase font-bold text-[var(--forest-green)] bg-[rgba(30,97,59,0.1)] px-2 py-0.5 rounded-full">ACTIVE TRIP</span>
+              <h3 class="font-serif text-xl font-bold text-[var(--ink-primary)] mt-1.5">Goa Beach Getaway 🌴</h3>
+              <div class="text-xs text-[var(--ink-secondary)] mt-0.5">Oct 12 – Oct 18, 2026 · 6 Days</div>
+            </div>
+            <div class="text-right">
+              <span class="text-[10px] uppercase font-bold text-[var(--ink-secondary)]">BUDGET</span>
+              <div class="font-serif font-bold text-base text-[var(--ink-primary)]">₹ 40,000</div>
+            </div>
+          </div>
+
+          <!-- Progress Bar & Spend vs Remaining -->
+          <div class="mt-4">
+            <div class="flex justify-between text-xs font-medium text-[var(--ink-primary)] mb-1.5">
+              <span>Spent: <strong class="text-[var(--forest-green)] font-serif text-sm">₹ 24,800</strong> (62%)</span>
+              <span>Left: <strong class="font-serif text-sm">₹ 15,200</strong></span>
+            </div>
+            <div class="w-full bg-[rgba(26,26,24,0.12)] h-2.5 rounded-full overflow-hidden">
+              <div class="bg-[var(--forest-green)] h-full w-[62%] rounded-full"></div>
+            </div>
+          </div>
+
+          <!-- Tagged Spends List inside Trip -->
+          <div class="mt-4 pt-3 border-t border-[var(--border-paper)]">
+            <div class="flex justify-between items-center text-[11px] font-bold text-[var(--ink-secondary)] uppercase tracking-wider mb-2">
+              <span>Tagged Spends (4)</span>
+              <button onclick="alert('Select any SMS in Ledger to tag it to Goa trip.')" class="text-[var(--forest-green)] hover:underline">+ Tag SMS</button>
+            </div>
+            <div class="space-y-2 text-xs">
+              <div class="flex justify-between items-center p-2 rounded-lg bg-[var(--bg-paper)] border border-[var(--border-paper)]">
+                <div>
+                  <div class="font-bold text-[var(--ink-primary)]">Indigo Airlines (BLR-GOI)</div>
+                  <div class="text-[10px] text-[var(--ink-secondary)]">Oct 3 · Flight Booking · Card</div>
+                </div>
+                <div class="font-serif font-bold text-[var(--ink-primary)]">₹ 9,200.00</div>
+              </div>
+
+              <div class="flex justify-between items-center p-2 rounded-lg bg-[var(--bg-paper)] border border-[var(--border-paper)]">
+                <div>
+                  <div class="font-bold text-[var(--ink-primary)]">Taj Fort Aguada Resort</div>
+                  <div class="text-[10px] text-[var(--ink-secondary)]">Oct 3 · Hotel Deposit · Card</div>
+                </div>
+                <div class="font-serif font-bold text-[var(--ink-primary)]">₹ 11,500.00</div>
+              </div>
+
+              <div class="flex justify-between items-center p-2 rounded-lg bg-[var(--bg-paper)] border border-[var(--border-paper)]">
+                <div>
+                  <div class="font-bold text-[var(--ink-primary)]">Curlies Beach Shack</div>
+                  <div class="text-[10px] text-[var(--ink-secondary)]">Oct 4 · Dining · UPI</div>
+                </div>
+                <div class="font-serif font-bold text-[var(--ink-primary)]">₹ 2,400.00</div>
+              </div>
+
+              <div class="flex justify-between items-center p-2 rounded-lg bg-[var(--bg-paper)] border border-[var(--border-paper)]">
+                <div>
+                  <div class="font-bold text-[var(--ink-primary)]">Goa Miles Taxi Prepaid</div>
+                  <div class="text-[10px] text-[var(--ink-secondary)]">Oct 4 · Cab Transfer · UPI</div>
+                </div>
+                <div class="font-serif font-bold text-[var(--ink-primary)]">₹ 1,700.00</div>
+              </div>
+            </div>
+
+            <!-- Export Trip Button -->
+            <button onclick="exportTripLedger('Goa Beach Getaway')" class="w-full mt-3 py-2 border border-[var(--ink-primary)] text-[var(--ink-primary)] text-xs font-semibold rounded-xl hover:bg-[var(--surface-paper)] active:scale-95 transition flex items-center justify-center space-x-1.5">
+              <span>📄</span>
+              <span>Export Trip Report (CSV / Sheet)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Past Trips Section -->
+        <div class="mt-6">
+          <div class="text-[11px] font-bold text-[var(--ink-secondary)] uppercase tracking-wider mb-2">
+            Past Trips &amp; Archives
+          </div>
+          <div class="p-3.5 bg-[var(--surface-paper)] rounded-xl border border-[var(--border-paper)] flex justify-between items-center">
+            <div class="flex items-center space-x-2.5">
+              <span class="text-xl">🏔️</span>
+              <div>
+                <div class="font-serif font-bold text-sm text-[var(--ink-primary)]">Manali Mountain Trek</div>
+                <div class="text-[11px] text-[var(--ink-secondary)]">June 14 – June 20, 2026 · Completed</div>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="font-serif font-bold text-sm text-[var(--ink-primary)]">₹ 32,450</div>
+              <div class="text-[10px] text-[var(--forest-green)] font-semibold">Under budget</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ================= SCREEN 5: SAVE ================= -->
+      <div id="screen-save" class="screen-view hidden">
+        <div class="pt-3 pb-2 flex justify-between items-center">
+          <h1 class="font-serif text-3xl font-bold tracking-tight text-[var(--ink-primary)]">Savings Goals</h1>
+          <button onclick="openModal('modal-add-goal')" class="text-xs bg-[var(--ink-primary)] text-white px-3 py-1 rounded-full font-medium">+ Goal</button>
+        </div>
+        <div class="mt-1 border-b border-[var(--border-paper)]"></div>
+
+        <div class="space-y-4 mt-4">
+          <div class="p-4 bg-[var(--surface-paper)] rounded-2xl border border-[var(--border-paper)]">
+            <div class="flex justify-between items-center">
+              <div class="flex items-center space-x-2.5">
+                <span class="text-2xl">📱</span>
+                <div>
+                  <h3 class="font-serif text-lg font-bold text-[var(--ink-primary)]">New iPhone</h3>
+                  <div class="text-xs text-[var(--ink-secondary)]">Target: Dec 2026</div>
+                </div>
+              </div>
+              <span class="font-serif font-bold text-base text-[var(--forest-green)]">65%</span>
+            </div>
+            <div class="w-full bg-[rgba(26,26,24,0.12)] h-2 rounded-full mt-3 overflow-hidden">
+              <div class="bg-[var(--forest-green)] h-full w-[65%]"></div>
+            </div>
+            <div class="flex justify-between text-xs text-[var(--ink-secondary)] mt-2">
+              <span>Saved: <strong class="text-[var(--ink-primary)]">₹ 65,000</strong></span>
+              <span>Target: ₹ 1,00,000</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= SCREEN 6: SETTINGS ================= -->
+      <div id="screen-settings" class="screen-view hidden">
+        <div class="pt-3 pb-2 flex justify-between items-center">
+          <h1 class="font-serif text-3xl font-bold tracking-tight text-[var(--ink-primary)]">Settings</h1>
+        </div>
+        <div class="mt-1 border-b border-[var(--border-paper)]"></div>
+
+        <div class="space-y-4 mt-4">
+
+          <!-- SECTION: SECURITY & PRIVACY -->
+          <div>
+            <div class="text-[10px] font-bold text-[var(--ink-secondary)] uppercase tracking-wider mb-2">
+              Security &amp; App Lock
+            </div>
+            <div class="bg-[var(--surface-paper)] rounded-2xl border border-[var(--border-paper)] divide-y divide-[var(--border-paper)] text-xs">
+              
+              <!-- Biometric / PIN Lock -->
+              <div class="p-3.5 flex justify-between items-center">
+                <div class="pr-2">
+                  <div class="font-bold text-[var(--ink-primary)]">Biometric / Device PIN Lock</div>
+                  <div class="text-[11px] text-[var(--ink-secondary)]">Require fingerprint or PIN upon app launch</div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="toggle-app-lock" class="sr-only peer" onchange="toggleSetting('app-lock')">
+                  <div class="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--forest-green)]"></div>
+                </label>
+              </div>
+
+              <!-- Hide in App Switcher (FLAG_SECURE) -->
+              <div class="p-3.5 flex justify-between items-center">
+                <div class="pr-2">
+                  <div class="font-bold text-[var(--ink-primary)]">Hide in Recent Apps (FLAG_SECURE)</div>
+                  <div class="text-[11px] text-[var(--ink-secondary)]">Prevents screenshots &amp; app switcher leaks</div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="toggle-flag-secure" checked class="sr-only peer" onchange="toggleSetting('flag-secure')">
+                  <div class="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--forest-green)]"></div>
+                </label>
+              </div>
+
+              <!-- Hide Amounts by Default -->
+              <div class="p-3.5 flex justify-between items-center">
+                <div class="pr-2">
+                  <div class="font-bold text-[var(--ink-primary)]">Hide Amounts by Default</div>
+                  <div class="text-[11px] text-[var(--ink-secondary)]">Mask balances as •••• until eye tapped</div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="toggle-hide-amounts" checked class="sr-only peer" onchange="toggleSetting('hide-amounts')">
+                  <div class="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--forest-green)]"></div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION: SOVEREIGN BACKUP KEY -->
+          <div>
+            <div class="text-[10px] font-bold text-[var(--ink-secondary)] uppercase tracking-wider mb-2">
+              Sovereign Ledger Key (Vault)
+            </div>
+            <div class="space-y-2">
+              <div onclick="openModal('modal-ledger-key')" class="p-3.5 bg-[var(--surface-paper)] rounded-2xl border-2 border-[var(--forest-green)] cursor-pointer hover:shadow-sm transition">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-3">
+                    <span class="text-xl">🔑</span>
+                    <div>
+                      <h3 class="font-serif text-sm font-bold text-[var(--ink-primary)]">View Ledger Key (Vault Phrase)</h3>
+                      <p class="text-[11px] text-[var(--ink-secondary)]">12-word seed phrase for decrypting backups</p>
+                    </div>
+                  </div>
+                  <span class="text-[11px] font-bold text-[var(--forest-green)]">VIEW</span>
+                </div>
+              </div>
+
+              <div onclick="openModal('modal-paste-ledger-key')" class="p-3.5 bg-[var(--surface-paper)] rounded-2xl border border-[var(--border-paper)] cursor-pointer hover:border-[var(--ink-primary)] transition">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-3">
+                    <span class="text-xl">📋</span>
+                    <div>
+                      <h3 class="font-serif text-sm font-bold text-[var(--ink-primary)]">Paste Existing Ledger Key</h3>
+                      <p class="text-[11px] text-[var(--ink-secondary)]">Restore or unlock vault with an existing 12-word key</p>
+                    </div>
+                  </div>
+                  <span class="text-[11px] font-bold text-[var(--ink-primary)]">PASTE</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION: SMS SECURITY & PRIVACY SHIELD -->
+          <div>
+            <div class="text-[10px] font-bold text-[var(--ink-secondary)] uppercase tracking-wider mb-2">
+              Bank OTP &amp; Parser Shield
+            </div>
+            <div class="p-3.5 bg-[rgba(30,97,59,0.06)] rounded-2xl border border-[rgba(30,97,59,0.25)] text-xs text-[var(--ink-primary)]">
+              <div class="flex items-center space-x-2 font-bold text-[var(--forest-green)] mb-1">
+                <span>🛡️</span>
+                <span>Bank OTP &amp; Sensitive Shield Active</span>
+              </div>
+              <p class="text-[11px] leading-relaxed text-[var(--ink-secondary)]">
+                Bank OTPs &amp; passwords from senders like <strong class="text-[var(--ink-primary)]">VM-SBIUPI</strong> or <strong class="text-[var(--ink-primary)]">AD-HDFCBK</strong> are strictly dropped at the kernel gate before parsing. They are never logged or added to the ledger.
+              </p>
+            </div>
+          </div>
+
+          <!-- SECTION: OFFLINE PRIVACY GUARANTEE -->
+          <div class="p-3.5 bg-[var(--surface-paper)] rounded-2xl border border-[var(--border-paper)] text-xs">
+            <div class="flex items-center space-x-2 font-bold text-[var(--ink-primary)] mb-1">
+              <span>🔒</span>
+              <span>Zero INTERNET Manifest Verification</span>
+            </div>
+            <p class="text-[11px] text-[var(--ink-secondary)] leading-relaxed">
+              Vyayah contains zero cloud endpoints, zero analytics SDKs, and zero network permission in AndroidManifest.xml.
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- EDITORIAL MINIMALIST BOTTOM NAVIGATION BAR -->
+    <div class="bg-[var(--bg-paper)] border-t border-[var(--border-paper)] py-3 px-4">
+      <div class="flex justify-between items-center text-[11px] tracking-[0.8px] font-bold">
+        <button onclick="switchTab('today')" class="nav-tab flex flex-col items-center group active" data-tab="today">
+          <span class="text-[var(--ink-primary)]">TODAY</span>
+          <span class="tab-indicator w-6 h-[2.5px] bg-[var(--forest-green)] mt-1 rounded-full"></span>
+        </button>
+
+        <button onclick="switchTab('ledger')" class="nav-tab flex flex-col items-center group" data-tab="ledger">
+          <span class="text-[var(--ink-secondary)]">LEDGER</span>
+          <span class="tab-indicator w-6 h-[2.5px] bg-transparent mt-1 rounded-full"></span>
+        </button>
+
+        <button onclick="switchTab('cards')" class="nav-tab flex flex-col items-center group" data-tab="cards">
+          <span class="text-[var(--ink-secondary)]">CARDS</span>
+          <span class="tab-indicator w-6 h-[2.5px] bg-transparent mt-1 rounded-full"></span>
+        </button>
+
+        <button onclick="switchTab('trips')" class="nav-tab flex flex-col items-center group" data-tab="trips">
+          <span class="text-[var(--ink-secondary)]">TRIPS</span>
+          <span class="tab-indicator w-6 h-[2.5px] bg-transparent mt-1 rounded-full"></span>
+        </button>
+
+        <button onclick="switchTab('save')" class="nav-tab flex flex-col items-center group" data-tab="save">
+          <span class="text-[var(--ink-secondary)]">SAVE</span>
+          <span class="tab-indicator w-6 h-[2.5px] bg-transparent mt-1 rounded-full"></span>
+        </button>
+
+        <button onclick="switchTab('settings')" class="nav-tab flex flex-col items-center group" data-tab="settings">
+          <span class="text-[var(--ink-secondary)]">SETTINGS</span>
+          <span class="tab-indicator w-6 h-[2.5px] bg-transparent mt-1 rounded-full"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= MODALS ================= -->
+
+    <!-- Modal 1: Add Missed Transaction Modal -->
+    <div id="modal-add-missed" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden">
+      <div class="bg-[var(--bg-paper)] w-full max-w-sm rounded-3xl p-5 border border-[var(--border-paper)] shadow-2xl">
+        <div class="flex justify-between items-center">
+          <h3 class="font-serif text-xl font-bold text-[var(--ink-primary)]">Add Missed Transaction</h3>
+          <button onclick="closeModal('modal-add-missed')" class="text-gray-400 hover:text-black">✕</button>
+        </div>
+        <p class="text-xs text-[var(--ink-secondary)] mt-1">
+          Add any payment or cash purchase that didn't trigger an SMS alert.
+        </p>
+
+        <div class="space-y-3 mt-4 text-xs">
+          <div>
+            <label class="font-bold text-[var(--ink-secondary)] uppercase">Amount (₹)</label>
+            <input id="input-missed-amount" type="number" placeholder="e.g. 250" class="w-full mt-1 p-2.5 rounded-xl border border-[var(--border-paper)] bg-[var(--surface-paper)] font-serif text-base font-bold text-[var(--ink-primary)]">
+          </div>
+          <div>
+            <label class="font-bold text-[var(--ink-secondary)] uppercase">Merchant / Payee Name</label>
+            <input id="input-missed-merchant" type="text" placeholder="e.g. Local Tea Stall, Auto Rickshaw" class="w-full mt-1 p-2.5 rounded-xl border border-[var(--border-paper)] bg-[var(--surface-paper)] text-[var(--ink-primary)] font-medium">
+          </div>
+          <div class="flex space-x-2">
+            <button id="btn-type-debit" onclick="selectTxnType('debit')" class="flex-1 py-2 rounded-xl bg-[var(--ink-primary)] text-white font-medium">Expense (Debit)</button>
+            <button id="btn-type-credit" onclick="selectTxnType('credit')" class="flex-1 py-2 rounded-xl border border-[var(--border-paper)] text-[var(--ink-primary)] font-medium">Income (Bank)</button>
+          </div>
+          <div>
+            <label class="font-bold text-[var(--ink-secondary)] uppercase">Category</label>
+            <select id="input-missed-category" class="w-full mt-1 p-2.5 rounded-xl border border-[var(--border-paper)] bg-[var(--surface-paper)] text-[var(--ink-primary)] font-medium">
+              <option value="Food & Dining">Food & Dining</option>
+              <option value="Groceries">Groceries</option>
+              <option value="Transport">Transport</option>
+              <option value="Shopping">Shopping</option>
+              <option value="Bills & Utilities">Bills & Utilities</option>
+              <option value="Income">Income (Bank Credit)</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <button onclick="saveMissedTransaction()" class="w-full mt-5 py-2.5 bg-[var(--ink-primary)] text-white text-xs font-semibold rounded-xl active:scale-95 transition">
+          Save To Ledger
+        </button>
+      </div>
+    </div>
+
+    <!-- Modal 2: Rename & Detail Transaction Inspector -->
+    <div id="modal-sms-audit" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden">
+      <div class="bg-[var(--bg-paper)] w-full max-w-sm rounded-3xl p-5 border border-[var(--border-paper)] shadow-2xl">
+        <div class="flex justify-between items-center">
+          <h3 class="font-serif text-xl font-bold text-[var(--ink-primary)]">Edit Transaction</h3>
+          <button onclick="closeModal('modal-sms-audit')" class="text-gray-400 hover:text-black">✕</button>
+        </div>
+
+        <div class="mt-4 space-y-3 text-xs">
+          <!-- Rename Merchant Input -->
+          <div>
+            <label class="font-bold text-[var(--ink-secondary)] uppercase">Merchant Name (Editable)</label>
+            <div class="flex space-x-2 mt-1">
+              <input id="edit-txn-name-input" type="text" class="flex-1 p-2.5 rounded-xl border border-[var(--border-paper)] bg-[var(--surface-paper)] font-serif text-base font-bold text-[var(--ink-primary)]">
+              <button onclick="applyRenameTxn()" class="px-3 bg-[var(--ink-primary)] text-white font-medium rounded-xl text-xs">Rename</button>
+            </div>
+          </div>
+
+          <!-- Transaction Amount -->
+          <div class="p-3 bg-[var(--surface-paper)] rounded-xl border border-[var(--border-paper)] flex justify-between items-center">
+            <span class="text-[var(--ink-secondary)]">Amount</span>
+            <span id="sms-modal-amount" class="font-serif font-bold text-lg text-[var(--ink-primary)]">-₹ 450.00</span>
+          </div>
+
+          <!-- Raw SMS Body -->
+          <div>
+            <div class="text-[10px] font-bold text-[var(--ink-secondary)] uppercase">Original Bank SMS Body:</div>
+            <p id="sms-modal-body" class="text-xs text-[var(--ink-primary)] mt-1 p-2.5 bg-[var(--surface-paper)] rounded-xl border border-[var(--border-paper)] font-mono leading-relaxed">
+              SMS content here...
+            </p>
+          </div>
+        </div>
+
+        <button onclick="closeModal('modal-sms-audit')" class="w-full mt-4 py-2 border border-[var(--border-paper)] text-xs font-medium rounded-xl">Close</button>
+      </div>
+    </div>
+
+    <!-- Modal 3: 12-Word Sovereign Ledger Key Modal -->
+    <div id="modal-ledger-key" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden">
+      <div class="bg-[var(--bg-paper)] w-full max-w-sm rounded-3xl p-5 border border-[var(--border-paper)] shadow-2xl">
+        <div class="flex justify-between items-center">
+          <h3 class="font-serif text-xl font-bold text-[var(--ink-primary)]">Your Ledger Key</h3>
+          <button onclick="closeModal('modal-ledger-key')" class="text-gray-400 hover:text-black">✕</button>
+        </div>
+        <p class="text-xs text-[var(--ink-secondary)] mt-2">
+          This 12-word secret phrase is your Sovereign Vault Key. Without servers, this phrase is the only key capable of decrypting your database backups.
+        </p>
+
+        <div class="grid grid-cols-2 gap-2 mt-4 p-3 bg-[var(--surface-paper)] rounded-xl border border-[var(--border-paper)] text-xs font-mono font-medium">
+          <div><span class="text-gray-400 mr-1">1.</span> amber</div>
+          <div><span class="text-gray-400 mr-1">2.</span> bamboo</div>
+          <div><span class="text-gray-400 mr-1">3.</span> cedar</div>
+          <div><span class="text-gray-400 mr-1">4.</span> delta</div>
+          <div><span class="text-gray-400 mr-1">5.</span> ember</div>
+          <div><span class="text-gray-400 mr-1">6.</span> falcon</div>
+          <div><span class="text-gray-400 mr-1">7.</span> glacier</div>
+          <div><span class="text-gray-400 mr-1">8.</span> harbor</div>
+          <div><span class="text-gray-400 mr-1">9.</span> indigo</div>
+          <div><span class="text-gray-400 mr-1">10.</span> jasper</div>
+          <div><span class="text-gray-400 mr-1">11.</span> kestrel</div>
+          <div><span class="text-gray-400 mr-1">12.</span> lotus</div>
+        </div>
+
+        <button onclick="copyLedgerKey()" class="w-full mt-4 py-2.5 bg-[var(--ink-primary)] text-white text-xs font-semibold rounded-xl active:scale-95 transition">
+          Copy 12-Word Key
+        </button>
+      </div>
+    </div>
+
+    <!-- Modal 4: Paste Existing Ledger Key Modal -->
+    <div id="modal-paste-ledger-key" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden">
+      <div class="bg-[var(--bg-paper)] w-full max-w-sm rounded-3xl p-5 border border-[var(--border-paper)] shadow-2xl">
+        <div class="flex justify-between items-center">
+          <h3 class="font-serif text-xl font-bold text-[var(--ink-primary)]">Paste Ledger Key</h3>
+          <button onclick="closeModal('modal-paste-ledger-key')" class="text-gray-400 hover:text-black">✕</button>
+        </div>
+        <p class="text-xs text-[var(--ink-secondary)] mt-1.5 leading-relaxed">
+          Paste your existing 12-word seed phrase to unlock and decrypt your database vault on this phone.
+        </p>
+
+        <div class="mt-3">
+          <label class="text-[10px] font-bold text-[var(--ink-secondary)] uppercase">12-Word Seed Phrase</label>
+          <textarea id="paste-key-input" rows="3" placeholder="e.g. amber bamboo cedar delta ember falcon glacier harbor indigo jasper kestrel lotus" class="w-full mt-1 p-2.5 rounded-xl border border-[var(--border-paper)] bg-[var(--surface-paper)] font-mono text-xs text-[var(--ink-primary)] leading-relaxed resize-none"></textarea>
+        </div>
+
+        <div class="mt-4 flex space-x-2">
+          <button onclick="closeModal('modal-paste-ledger-key')" class="flex-1 py-2.5 border border-[var(--border-paper)] text-xs font-semibold rounded-xl">Cancel</button>
+          <button onclick="restorePastedKey()" class="flex-1 py-2.5 bg-[var(--forest-green)] text-white text-xs font-semibold rounded-xl active:scale-95 transition">Restore Key</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal 5: Add New Trip Modal -->
+    <div id="modal-add-trip" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden">
+      <div class="bg-[var(--bg-paper)] w-full max-w-sm rounded-3xl p-5 border border-[var(--border-paper)] shadow-2xl">
+        <div class="flex justify-between items-center">
+          <h3 class="font-serif text-xl font-bold text-[var(--ink-primary)]">Create New Trip</h3>
+          <button onclick="closeModal('modal-add-trip')" class="text-gray-400 hover:text-black">✕</button>
+        </div>
+        <p class="text-xs text-[var(--ink-secondary)] mt-1">
+          Set up a dedicated vacation budget to isolate travel spends from regular monthly expense tracking.
+        </p>
+
+        <div class="space-y-3 mt-4 text-xs">
+          <div>
+            <label class="font-bold text-[var(--ink-secondary)] uppercase">Trip Name</label>
+            <input id="input-trip-name" type="text" placeholder="e.g. Ladakh Bike Trip, Kerala Backwaters" class="w-full mt-1 p-2.5 rounded-xl border border-[var(--border-paper)] bg-[var(--surface-paper)] font-serif text-sm font-bold text-[var(--ink-primary)]">
+          </div>
+          <div>
+            <label class="font-bold text-[var(--ink-secondary)] uppercase">Total Trip Budget (₹)</label>
+            <input id="input-trip-budget" type="number" placeholder="e.g. 35000" class="w-full mt-1 p-2.5 rounded-xl border border-[var(--border-paper)] bg-[var(--surface-paper)] font-serif text-base font-bold text-[var(--ink-primary)]">
+          </div>
+          <div>
+            <label class="font-bold text-[var(--ink-secondary)] uppercase">Travel Dates</label>
+            <input id="input-trip-dates" type="text" placeholder="e.g. Nov 10 – Nov 16, 2026" class="w-full mt-1 p-2.5 rounded-xl border border-[var(--border-paper)] bg-[var(--surface-paper)] text-[var(--ink-primary)]">
+          </div>
+        </div>
+
+        <button onclick="createTrip()" class="w-full mt-5 py-2.5 bg-[var(--ink-primary)] text-white text-xs font-semibold rounded-xl active:scale-95 transition">
+          Create Vacation Ledger
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Tab Navigation
+    function switchTab(tabId) {
+      document.querySelectorAll('.screen-view').forEach(screen => screen.classList.add('hidden'));
+      const targetScreen = document.getElementById('screen-' + tabId);
+      if (targetScreen) targetScreen.classList.remove('hidden');
+
+      document.querySelectorAll('.nav-tab').forEach(tab => {
+        const isTarget = tab.getAttribute('data-tab') === tabId;
+        const textSpan = tab.querySelector('span:first-child');
+        const indicator = tab.querySelector('.tab-indicator');
+
+        if (isTarget) {
+          textSpan.classList.remove('text-[var(--ink-secondary)]');
+          textSpan.classList.add('text-[var(--ink-primary)]');
+          indicator.classList.remove('bg-transparent');
+          indicator.classList.add('bg-[var(--forest-green)]');
+        } else {
+          textSpan.classList.add('text-[var(--ink-secondary)]');
+          textSpan.classList.remove('text-[var(--ink-primary)]');
+          indicator.classList.add('bg-transparent');
+          indicator.classList.remove('bg-[var(--forest-green)]');
+        }
+      });
+    }
+
+    // Hide/Show Amounts
+    let amountsHidden = true;
+    const eyeBtn = document.getElementById('toggle-eye-btn');
+    eyeBtn.addEventListener('click', () => {
+      amountsHidden = !amountsHidden;
+      document.querySelectorAll('.hideable-amount').forEach(el => {
+        el.textContent = amountsHidden ? '••••' : el.getAttribute('data-real');
+      });
+      document.getElementById('eye-icon').textContent = amountsHidden ? '👁️' : '🕶️';
+    });
+
+    // Modals
+    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+    // Transaction Editing & Renaming
+    let currentActiveTxnElement = null;
+    function showSmsAudit(element, merchant, category, amount, body) {
+      currentActiveTxnElement = element;
+      document.getElementById('edit-txn-name-input').value = merchant;
+      document.getElementById('sms-modal-amount').textContent = amount;
+      document.getElementById('sms-modal-body').textContent = body;
+      openModal('modal-sms-audit');
+    }
+
+    function applyRenameTxn() {
+      const newName = document.getElementById('edit-txn-name-input').value.trim();
+      if (newName && currentActiveTxnElement) {
+        currentActiveTxnElement.querySelector('.txn-title').textContent = newName;
+        alert(`Transaction renamed to "${newName}" and saved locally!`);
+        closeModal('modal-sms-audit');
+      }
+    }
+
+    // Missed Transaction Adding
+    let currentTxnDirection = 'debit';
+    function selectTxnType(type) {
+      currentTxnDirection = type;
+      if (type === 'debit') {
+        document.getElementById('btn-type-debit').className = "flex-1 py-2 rounded-xl bg-[var(--ink-primary)] text-white font-medium";
+        document.getElementById('btn-type-credit').className = "flex-1 py-2 rounded-xl border border-[var(--border-paper)] text-[var(--ink-primary)] font-medium";
+      } else {
+        document.getElementById('btn-type-credit').className = "flex-1 py-2 rounded-xl bg-[var(--ink-primary)] text-white font-medium";
+        document.getElementById('btn-type-debit').className = "flex-1 py-2 rounded-xl border border-[var(--border-paper)] text-[var(--ink-primary)] font-medium";
+      }
+    }
+
+    function saveMissedTransaction() {
+      const amt = document.getElementById('input-missed-amount').value.trim();
+      const name = document.getElementById('input-missed-merchant').value.trim();
+      const cat = document.getElementById('input-missed-category').value;
+
+      if (!amt || !name) {
+        alert('Please enter amount and merchant name');
+        return;
+      }
+
+      const isDebit = currentTxnDirection === 'debit';
+      const sign = isDebit ? '-₹ ' : '+₹ ';
+      const colorClass = isDebit ? 'text-[var(--ink-primary)]' : 'text-[var(--forest-green)]';
+
+      const newTxnHtml = `
+        <div class="p-3.5 bg-[var(--surface-paper)] rounded-xl border border-[var(--border-paper)] flex justify-between items-center cursor-pointer hover:border-[var(--ink-primary)] transition"
+             onclick="showSmsAudit(this, '${name}', '${cat}', '${sign}${amt}.00', 'Manually entered transaction')">
+          <div>
+            <div class="txn-title font-serif font-bold text-base text-[var(--ink-primary)]">${name}</div>
+            <div class="text-[11px] text-[var(--ink-secondary)] mt-0.5">Just now · Manual Entry · ${cat}</div>
+          </div>
+          <div class="font-serif font-bold text-base ${colorClass}">${sign}${amt}.00</div>
+        </div>
+      `;
+
+      document.getElementById('ledger-txn-list').insertAdjacentHTML('afterbegin', newTxnHtml);
+      closeModal('modal-add-missed');
+      switchTab('ledger');
+      alert(`Added "${name}" (${sign}${amt}) to ledger!`);
+    }
+
+    function copyLedgerKey() {
+      navigator.clipboard.writeText("amber bamboo cedar delta ember falcon glacier harbor indigo jasper kestrel lotus");
+      alert('Ledger Key copied to clipboard!');
+      closeModal('modal-ledger-key');
+    }
+
+    // Restore / Paste Ledger Key
+    function restorePastedKey() {
+      const phrase = document.getElementById('paste-key-input').value.trim();
+      const words = phrase.split(/\s+/).filter(w => w.length > 0);
+      if (words.length !== 12) {
+        alert(`Invalid key: Expected 12 words, found ${words.length}. Please check and try again.`);
+        return;
+      }
+      alert('Ledger Key restored successfully! Encrypted database decrypted.');
+      closeModal('modal-paste-ledger-key');
+    }
+
+    // Settings Interactive Toggles
+    function toggleSetting(key) {
+      if (key === 'app-lock') {
+        const enabled = document.getElementById('toggle-app-lock').checked;
+        alert(enabled ? 'Biometric / PIN App Lock enabled!' : 'App Lock disabled.');
+      } else if (key === 'flag-secure') {
+        const enabled = document.getElementById('toggle-flag-secure').checked;
+        alert(enabled ? 'FLAG_SECURE enabled: App previews hidden in recents.' : 'FLAG_SECURE disabled.');
+      } else if (key === 'hide-amounts') {
+        const enabled = document.getElementById('toggle-hide-amounts').checked;
+        amountsHidden = enabled;
+        document.querySelectorAll('.hideable-amount').forEach(el => {
+          el.textContent = amountsHidden ? '••••' : el.getAttribute('data-real');
+        });
+        document.getElementById('eye-icon').textContent = amountsHidden ? '👁️' : '🕶️';
+      }
+    }
+
+    // Trips Features
+    function createTrip() {
+      const name = document.getElementById('input-trip-name').value.trim();
+      const budget = document.getElementById('input-trip-budget').value.trim();
+      const dates = document.getElementById('input-trip-dates').value.trim();
+
+      if (!name || !budget) {
+        alert('Please enter a trip name and budget amount.');
+        return;
+      }
+
+      alert(`Trip "${name}" created with budget ₹ ${budget}! Any SMS transactions tagged to this trip will not affect your regular monthly budgets.`);
+      closeModal('modal-add-trip');
+      switchTab('trips');
+    }
+
+    function exportTripLedger(tripName) {
+      alert(`Trip Ledger for "${tripName}" exported as CSV/Excel report! File saved to Downloads.`);
+    }
+  </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/hero-banner.jpg" alt="Vyay (व्यय) - 100% Offline & Private Android Expense Tracker" width="100%" />
+<img src="docs/assets/hero-banner.png" alt="Vyay (व्यय) - 100% Offline & Private Android Expense Tracker" width="100%" />
 
 # Vyay (व्यय)
 ### The 100% Offline, Privacy-First Personal Finance Tracker for Android
@@ -62,7 +62,34 @@ Most popular expense tracking apps (CRED, Walnut/Axio, Fold, Money Lover) are **
 ## 📱 App Experience
 
 <div align="center">
-  <img src="docs/assets/screens-showcase.jpg" alt="Vyay Android Screens Showcase - Ledger, Overview, Budgets, and Trips" width="100%" />
+  <img src="docs/assets/screens-showcase.png" alt="Vyay Android Screens Showcase - Ledger, Today Dashboard, Trips, and Cards" width="100%" />
+</div>
+
+<br/>
+
+### 📸 Real App UI Gallery
+
+<div align="center">
+<table>
+  <tr>
+    <td align="center" width="25%"><b>📊 Spend Velocity (Today)</b></td>
+    <td align="center" width="25%"><b>⚡ Bank & UPI Ledger</b></td>
+    <td align="center" width="25%"><b>🏖️ Trips & Vacations</b></td>
+    <td align="center" width="25%"><b>💳 Accounts & Credit Limits</b></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/assets/screen-today.png" width="100%" alt="Today Screen" /></td>
+    <td align="center"><img src="docs/assets/screen-ledger.png" width="100%" alt="Ledger Screen" /></td>
+    <td align="center"><img src="docs/assets/screen-trips.png" width="100%" alt="Trips Screen" /></td>
+    <td align="center"><img src="docs/assets/screen-cards.png" width="100%" alt="Cards Screen" /></td>
+  </tr>
+  <tr>
+    <td align="center"><i>Daily spend velocity, burn curve, bank income & category leader lines</i></td>
+    <td align="center"><i>Instant UPI capture (Swiggy, Blinkit), refunds, salary credits & filters</i></td>
+    <td align="center"><i>Ring-fenced holiday budgets that never skew monthly home groceries</i></td>
+    <td align="center"><i>Credit card dues, credit limit utilization & bank account balances</i></td>
+  </tr>
+</table>
 </div>
 
 ---

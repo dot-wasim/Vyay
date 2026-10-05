@@ -80,6 +80,19 @@ Instead, Vyay’s interface is modeled on **high-end financial journalism and ed
 * **Ink Dark Mode:** Deep charcoal paper tones (`#141413`) with subtle forest green accents (`#1E613B`) and muted borders for comfortable evening reviews.
 * **Typography-First Hierarchy:** Crisp, clean editorial numbers that display your financial reality without judgment or emotional manipulation.
 
+<div align="center">
+<table>
+  <tr>
+    <td align="center" width="50%"><b>Editorial Today Dashboard</b></td>
+    <td align="center" width="50%"><b>Hardware Security & OTP Shield</b></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/assets/screen-today.png" width="340" alt="Today Screen" /></td>
+    <td align="center"><img src="docs/assets/screen-settings.png" width="340" alt="Settings Screen" /></td>
+  </tr>
+</table>
+</div>
+
 ---
 
 ## 🗺️ Product Roadmap
