@@ -76,6 +76,14 @@ abstract class VyayahDatabase : RoomDatabase() {
                         seedDefaults(database)
                     }
                 }
+
+                override fun onOpen(db: SupportSQLiteDatabase) {
+                    super.onOpen(db)
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val database = getInstance(context, useEncryption)
+                        ensureFunCategories(database)
+                    }
+                }
             })
 
             return builder.build()
@@ -101,6 +109,20 @@ abstract class VyayahDatabase : RoomDatabase() {
                 SenderRule(senderPattern = ".*UNIONB.*", allowed = true, bankName = "Union Bank of India")
             )
             database.ruleDao().insertAllSenderRules(defaultSenders)
+        }
+
+        suspend fun ensureFunCategories(database: VyayahDatabase) {
+            val categoryDao = database.categoryDao()
+            val existing = categoryDao.getAllCategoriesSnapshot()
+            for (defaultCat in Category.DEFAULT_CATEGORIES) {
+                val baseName = defaultCat.name.substringBefore(" ").trim()
+                val found = existing.firstOrNull { it.name.startsWith(baseName, ignoreCase = true) }
+                if (found != null && found.name != defaultCat.name) {
+                    categoryDao.update(found.copy(name = defaultCat.name, icon = defaultCat.icon))
+                } else if (found == null) {
+                    categoryDao.insert(defaultCat)
+                }
+            }
         }
     }
 }

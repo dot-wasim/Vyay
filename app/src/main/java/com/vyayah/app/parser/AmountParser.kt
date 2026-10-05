@@ -2,15 +2,29 @@ package com.vyayah.app.parser
 
 object AmountParser {
 
-    private val AMOUNT_REGEX = Regex(
-        "(?:INR|Rs\\.?|₹)\\s*([0-9]{1,3}(?:,[0-9]{2,3})*(?:\\.[0-9]{1,2})?|[0-9]+(?:\\.[0-9]{1,2})?)",
-        RegexOption.IGNORE_CASE
+    private val AMOUNT_REGEXES = listOf(
+        // Currency prefix: "Rs. 1336.05", "INR 1000", "₹1,336.05", "Rs 1000.00"
+        Regex(
+            "(?:INR|Rs\\.?|₹|amount\\s+of\\s+(?:INR|Rs\\.?|₹)?)\\s*([0-9]+(?:,[0-9]+)*(?:\\.[0-9]{1,2})?)",
+            RegexOption.IGNORE_CASE
+        ),
+        // Currency suffix: "1336.05 INR", "1000 Rs."
+        Regex(
+            "([0-9]+(?:,[0-9]+)*(?:\\.[0-9]{1,2})?)\\s*(?:INR|Rs\\.?|₹)",
+            RegexOption.IGNORE_CASE
+        ),
+        // Verb prefix: "debited by 1336.05", "paid 1000", "spent 450.50"
+        Regex(
+            "(?:debited\\s+(?:by|for|of)|credited\\s+(?:by|for|with)|paid|spent|transferred\\s+(?:by|of)?)\\s*(?:INR|Rs\\.?|₹)?\\s*([0-9]+(?:,[0-9]+)*(?:\\.[0-9]{1,2})?)",
+            RegexOption.IGNORE_CASE
+        )
     )
 
     /**
      * Parses an amount string to integer paise.
      * Example: "1,234.50" -> 123450L
-     * Example: "450" -> 45000L
+     * Example: "1336.05" -> 133605L
+     * Example: "1000" -> 100000L
      */
     fun parseToMinorUnits(rawAmount: String): Long {
         val cleaned = rawAmount.replace(",", "").trim()
@@ -34,17 +48,24 @@ object AmountParser {
      * Returns Pair(amountInPaise, rawAmountString) or null if not found.
      */
     fun extractTransactionAmount(text: String): Pair<Long, String>? {
-        val match = AMOUNT_REGEX.find(text) ?: return null
-        val rawNum = match.groupValues[1]
-        val paise = parseToMinorUnits(rawNum)
-        return if (paise > 0L) Pair(paise, rawNum) else null
+        for (regex in AMOUNT_REGEXES) {
+            val match = regex.find(text)
+            if (match != null) {
+                val rawNum = match.groupValues[1]
+                val paise = parseToMinorUnits(rawNum)
+                if (paise > 0L) {
+                    return Pair(paise, rawNum)
+                }
+            }
+        }
+        return null
     }
 
     /**
      * Formats integer paise into Indian Rupee presentation format.
      * Example: 12345600L -> "₹1,23,456"
      */
-    fun formatPaiseToInr(paise: Long, includePaise: Boolean = false): String {
+    fun formatPaiseToInr(paise: Long, includePaise: Boolean = (paise % 100 != 0L)): String {
         val isNegative = paise < 0
         val absPaise = kotlin.math.abs(paise)
         val rupees = absPaise / 100
@@ -52,7 +73,7 @@ object AmountParser {
 
         val rupeeString = formatIndianNumbering(rupees)
         val prefix = if (isNegative) "-₹" else "₹"
-        return if (includePaise && p > 0) {
+        return if ((includePaise || p > 0) && p > 0) {
             "$prefix$rupeeString.${p.toString().padStart(2, '0')}"
         } else {
             "$prefix$rupeeString"

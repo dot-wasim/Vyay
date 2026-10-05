@@ -21,9 +21,9 @@ data class ParsedSmsResult(
 
 object BankSmsParser {
 
-    private val UPI_REF_REGEX = Regex("(?:UPI Ref(?: no)?|Ref no|Ref|UTR|rrn)[:\\s]*([0-9]{8,14})", RegexOption.IGNORE_CASE)
+    private val UPI_REF_REGEX = Regex("(?:UPI\\s+Ref(?:\\s+no\\.?)?|Ref(?:\\s+no\\.?)?|RRN|UTR|Txn(?:\\s+Id)?|IMPS\\s+Ref)[:\\s]*([A-Za-z0-9]{6,16})", RegexOption.IGNORE_CASE)
     private val VPA_REGEX = Regex("([a-zA-Z0-9.\\-_]+@[a-zA-Z0-9]+)", RegexOption.IGNORE_CASE)
-    private val AVL_BAL_REGEX = Regex("(?:Avl(?:\\.|\\s+)?Bal(?:ance)?|Bal(?:ance)?)\\s*(?:is|:)?\\s*(?:INR|Rs\\.?|₹)?\\s*([0-9]{1,3}(?:,[0-9]{2,3})*(?:\\.[0-9]{1,2})?|[0-9]+(?:\\.[0-9]{1,2})?)", RegexOption.IGNORE_CASE)
+    private val AVL_BAL_REGEX = Regex("(?:Avl(?:\\.|\\s+)?Bal(?:ance)?|Bal(?:ance)?)\\s*(?:is|:)?\\s*(?:INR|Rs\\.?|₹)?\\s*([0-9]+(?:,[0-9]+)*(?:\\.[0-9]{1,2})?)", RegexOption.IGNORE_CASE)
 
     // Bank account or card last 4 digits
     private val LAST4_REGEX = Regex("(?:a/c(?: no)?|acct(?: no)?|account(?: no)?|card|ending with|ending in)\\s*(?:xx|x+|\\*+)?\\s*([0-9]{3,4})", RegexOption.IGNORE_CASE)
@@ -77,8 +77,8 @@ object BankSmsParser {
         val isFailed = lowerBody.contains("failed") || lowerBody.contains("declined")
         val isSalary = lowerBody.contains("salary") || (lowerBody.contains("credited") && (lowerBody.contains("payroll") || lowerBody.contains("employer")))
         val isAtm = lowerBody.contains("atm") || (lowerBody.contains("cash") && lowerBody.contains("withdrawn"))
-        val isCredit = lowerBody.contains("credited") || lowerBody.contains("deposited") || lowerBody.contains("received")
-        val isDebit = lowerBody.contains("debited") || lowerBody.contains("spent") || lowerBody.contains("paid") || lowerBody.contains("withdrawn")
+        val isCredit = lowerBody.contains("credited") || lowerBody.contains("deposited") || lowerBody.contains("received") || lowerBody.contains("cashback")
+        val isDebit = lowerBody.contains("debited") || lowerBody.contains("spent") || lowerBody.contains("paid") || lowerBody.contains("withdrawn") || lowerBody.contains("sent") || lowerBody.contains("transferred") || lowerBody.contains("deducted") || lowerBody.contains("transfer of")
 
         val (direction, type) = when {
             isBillPayment -> Pair(TransactionDirection.DEBIT, TransactionType.BILL_PAYMENT)

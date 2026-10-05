@@ -50,6 +50,19 @@ interface TransactionDao {
 
     @Query("""
         SELECT * FROM transactions 
+        WHERE amountMinor = :amountMinor 
+          AND direction = :direction
+          AND timestamp BETWEEN (:timestamp - 600000) AND (:timestamp + 600000)
+        LIMIT 5
+    """)
+    suspend fun findRecentSimilarTransactions(
+        amountMinor: Long,
+        direction: TransactionDirection,
+        timestamp: Long
+    ): List<Transaction>
+
+    @Query("""
+        SELECT * FROM transactions 
         WHERE direction = 'DEBIT' 
           AND amountMinor >= :refundAmountMinor 
           AND timestamp BETWEEN (:refundTime - :windowMillis) AND :refundTime
@@ -112,10 +125,13 @@ interface CategoryDao {
     @Query("SELECT * FROM categories ORDER BY name ASC")
     fun getAllCategories(): Flow<List<Category>>
 
+    @Query("SELECT * FROM categories ORDER BY name ASC")
+    suspend fun getAllCategoriesSnapshot(): List<Category>
+
     @Query("SELECT * FROM categories WHERE id = :id")
     suspend fun getById(id: Long): Category?
 
-    @Query("SELECT * FROM categories WHERE name = :name LIMIT 1")
+    @Query("SELECT * FROM categories WHERE name = :name OR name LIKE :name || ' %' OR name LIKE '%' || :name || '%' LIMIT 1")
     suspend fun getByName(name: String): Category?
 }
 

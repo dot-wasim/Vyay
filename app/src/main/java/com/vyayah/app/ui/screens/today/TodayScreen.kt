@@ -300,11 +300,11 @@ fun TodayScreen(
                 // Show standard sample categories as in the inspiration screenshot
                 item {
                     Column {
-                        CategoryLeaderRow("Rent", displayAmount(0, false), 95f)
-                        CategoryLeaderRow("Food & Dining", displayAmount(0, false), 4f)
-                        CategoryLeaderRow("Groceries", displayAmount(0, false), 1f)
-                        CategoryLeaderRow("Subscriptions", displayAmount(0, false), 0f)
-                        CategoryLeaderRow("Other", displayAmount(0, false), 0f)
+                        CategoryLeaderRow("Rent 🏠", displayAmount(0, false), 95f)
+                        CategoryLeaderRow("Food & Treats 🍕🍔", displayAmount(0, false), 4f)
+                        CategoryLeaderRow("Groceries 🛒", displayAmount(0, false), 1f)
+                        CategoryLeaderRow("Entertainment & Fun 🍿🎬", displayAmount(0, false), 0f)
+                        CategoryLeaderRow("Other 📦", displayAmount(0, false), 0f)
                     }
                 }
             } else {

@@ -30,8 +30,9 @@ class CatchUpSyncWorker(
             Telephony.Sms.DATE
         )
 
-        val selection = "${Telephony.Sms.DATE} > ?"
-        val selectionArgs = arrayOf(syncState.lastProcessedTimestamp.toString())
+        val lookbackTimestamp = (syncState.lastProcessedTimestamp - 60_000L).coerceAtLeast(0L)
+        val selection = "${Telephony.Sms.DATE} >= ?"
+        val selectionArgs = arrayOf(lookbackTimestamp.toString())
         val sortOrder = "${Telephony.Sms.DATE} ASC"
 
         var latestDate = syncState.lastProcessedTimestamp

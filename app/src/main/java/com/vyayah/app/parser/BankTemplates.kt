@@ -12,12 +12,12 @@ data class BankTemplate(
 object BankTemplates {
 
     private val AVL_BAL_REGEX = Regex(
-        "(?:Avl(?:\\.|\\s+)?(?:Bal|Balance)|Available\\s+Balance|Total\\s+Bal|Bal(?:ance)?|Bal\\s+Limit|Available\\s+limit)\\s*(?:is|:)?\\s*(?:INR|Rs\\.?|₹)?\\s*([0-9]{1,3}(?:,[0-9]{2,3})*(?:\\.[0-9]{1,2})?|[0-9]+(?:\\.[0-9]{1,2})?)",
+        "(?:Avl(?:\\.|\\s+)?(?:Bal|Balance)|Available\\s+Balance|Total\\s+Bal|Bal(?:ance)?|Bal\\s+Limit|Available\\s+limit)\\s*(?:is|:)?\\s*(?:INR|Rs\\.?|₹)?\\s*([0-9]+(?:,[0-9]+)*(?:\\.[0-9]{1,2})?)",
         RegexOption.IGNORE_CASE
     )
 
     private val UPI_REF_REGEX = Regex(
-        "(?:UPI\\s+Ref(?:\\s+no)?|Ref(?:\\s+no)?|UTR|rrn)[:\\s]*([0-9]{8,14})",
+        "(?:UPI\\s+Ref(?:\\s+no\\.?)?|Ref(?:\\s+no\\.?)?|RRN|UTR|Txn(?:\\s+Id)?|IMPS\\s+Ref)[:\\s]*([A-Za-z0-9]{6,16})",
         RegexOption.IGNORE_CASE
     )
 
@@ -78,7 +78,7 @@ object BankTemplates {
                 direction = TransactionDirection.DEBIT
                 type = TransactionType.ATM
             }
-            b.contains("DEBITED") || b.contains("SPENT") || b.contains("PAID") -> {
+            b.contains("DEBITED") || b.contains("SPENT") || b.contains("PAID") || b.contains("SENT") || b.contains("TRANSFERRED") || b.contains("TRANSFER") -> {
                 direction = TransactionDirection.DEBIT
                 type = TransactionType.PURCHASE
             }
@@ -144,7 +144,7 @@ object BankTemplates {
                 direction = TransactionDirection.DEBIT
                 type = TransactionType.ATM
             }
-            b.contains("DEBITED") || b.contains("TRANSFERRED TO") || b.contains("PAID") -> {
+            b.contains("DEBITED") || b.contains("TRANSFERRED TO") || b.contains("TRANSFERRED") || b.contains("TRANSFER") || b.contains("PAID") || b.contains("SENT") -> {
                 direction = TransactionDirection.DEBIT
                 type = TransactionType.PURCHASE
             }
@@ -204,7 +204,7 @@ object BankTemplates {
                 direction = TransactionDirection.CREDIT
                 type = TransactionType.INCOME
             }
-            b.contains("DEBITED") || b.contains("USED FOR A TRANSACTION") || b.contains("PAID") -> {
+            b.contains("DEBITED") || b.contains("USED FOR") || b.contains("PAID") || b.contains("SENT") || b.contains("TRANSFERRED") -> {
                 direction = TransactionDirection.DEBIT
                 type = TransactionType.PURCHASE
             }

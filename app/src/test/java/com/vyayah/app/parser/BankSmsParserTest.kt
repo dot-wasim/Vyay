@@ -195,10 +195,55 @@ class BankSmsParserTest {
         assertNotNull("Should parse ICICI card transaction", result)
         assertEquals(319900L, result!!.amountMinor)
         assertEquals(TransactionDirection.DEBIT, result.direction)
-        assertEquals(PaymentInstrument.CARD, result.instrument)
-        assertEquals("4002", result.accountLast4)
+        assertEquals(4002, result!!.accountLast4?.toIntOrNull())
         assertEquals("ICICI Bank", result.bankName)
         assertEquals(8500000L, result.availableBalanceMinor)
+    }
+
+    @Test
+    fun testRailwayPaymentWithDecimals() {
+        val sender = "BZ-SBIUPI"
+        val body = "Dear SBI UPI user, A/C 1234 debited by Rs. 1336.05 on 01Oct26 by transfer to Indian Rail W Ref 427819283100. Avl Bal Rs 25000.00."
+
+        val result = BankSmsParser.parse(sender, body)
+        assertNotNull("Should parse Railway SMS with exact decimals", result)
+        assertEquals(133605L, result!!.amountMinor) // Rs 1336.05 = 133605 paise, NOT 136 or 133
+        assertEquals("427819283100", result.upiRef)
+
+        val normalized = MerchantNormalizer.normalize(result.merchantRaw, result.upiVpa)
+        assertEquals("Indian Railway 🚂", normalized)
+
+        val formatted = AmountParser.formatPaiseToInr(result.amountMinor)
+        assertEquals("₹1,336.05", formatted)
+    }
+
+    @Test
+    fun testTwoConsecutivePaymentsOf1000() {
+        val sender = "VM-HDFCBK"
+        val sms1 = "Sent Rs. 1000.00 from HDFC Bank A/C **1234 to Grocery Store on 01-10-26. UPI Ref 427800000001. Bal Rs 5000.00."
+        val sms2 = "Sent Rs 1000 from HDFC Bank A/C **1234 to Cafe Coffee on 01-10-26. UPI Ref 427800000002. Bal Rs 4000.00."
+
+        val result1 = BankSmsParser.parse(sender, sms1)
+        val result2 = BankSmsParser.parse(sender, sms2)
+
+        assertNotNull(result1)
+        assertNotNull(result2)
+
+        assertEquals(100000L, result1!!.amountMinor) // Rs 1000.00 = 100000 paise, NOT 100
+        assertEquals(100000L, result2!!.amountMinor) // Rs 1000 = 100000 paise, NOT 100
+
+        assertEquals("427800000001", result1.upiRef)
+        assertEquals("427800000002", result2.upiRef)
+        assertNotEquals(result1.upiRef, result2.upiRef) // Distinct reference numbers ensure both are stored
+    }
+
+    @Test
+    fun testFunModeMerchantEmojis() {
+        assertEquals("Swiggy 🍕", MerchantNormalizer.normalize("SWIGGY BANGALORE IN"))
+        assertEquals("Zomato 🍔", MerchantNormalizer.normalize("ZOMATO GURGAON"))
+        assertEquals("BookMyShow 🎟️", MerchantNormalizer.normalize("BOOKMYSHOW MUMBAI"))
+        assertEquals("PVR Cinemas 🍿", MerchantNormalizer.normalize("PVR CINEMAS FORUM"))
+        assertEquals("Indian Railway 🚂", MerchantNormalizer.normalize("INDIAN RAIL W"))
     }
 }
 

@@ -40,7 +40,7 @@ class SmsProcessWorker(
         val ruleDao = database.ruleDao()
         val categorizationEngine = CategorizationEngine(categoryDao, ruleDao)
 
-        // 1. Deduplication check
+        // 1. Deduplication check by SMS hash
         val smsHash = computeSmsHash(sender, body, timestamp)
         val existingTxn = transactionDao.getBySmsHash(smsHash)
         if (existingTxn != null) {
@@ -49,6 +49,28 @@ class SmsProcessWorker(
 
         // 2. Parse SMS
         val parsed = BankSmsParser.parse(sender, body) ?: return Result.success()
+
+        // 3. Deduplication check by Reference Number (UPI Ref / RRN / UTR / Txn ID)
+        // A distinct reference number guarantees whether a transaction is unique or duplicate
+        if (!parsed.upiRef.isNullOrBlank()) {
+            val existingByRef = transactionDao.getByUpiRef(parsed.upiRef)
+            if (existingByRef != null) {
+                return Result.success()
+            }
+        }
+
+        // 4. Duplicate safety check for identical messages without reference numbers within 10-minute window
+        if (parsed.upiRef.isNullOrBlank()) {
+            val recentSimilar = transactionDao.findRecentSimilarTransactions(
+                amountMinor = parsed.amountMinor,
+                direction = parsed.direction,
+                timestamp = timestamp
+            )
+            val isDuplicate = recentSimilar.any { it.sender == sender && it.rawBody == body }
+            if (isDuplicate) {
+                return Result.success()
+            }
+        }
 
         // 3. Normalize Merchant
         val merchantNorm = MerchantNormalizer.normalize(parsed.merchantRaw, parsed.upiVpa)
