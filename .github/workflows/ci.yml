@@ -62,16 +62,35 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Determine Version & Tag
+        id: versioning
+        run: |
+          VERSION=$(grep 'versionName = ' app/build.gradle.kts | head -1 | sed -E 's/.*versionName = "([^"]+)".*/\1/')
+          if [ -z "$VERSION" ]; then
+            VERSION="0.1.2-alpha"
+          fi
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+          else
+            TAG="v${VERSION}"
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "Target Version: ${VERSION}, Release Tag: ${TAG}"
+
       - name: Assemble Debug APK
         run: ./gradlew assembleDebug --stacktrace
 
-      - name: Prepare APK File
+      - name: Prepare APK Files
         run: |
+          VERSION="${{ steps.versioning.outputs.version }}"
           mkdir -p release_assets
           cp app/build/outputs/apk/debug/app-debug.apk release_assets/vyay-app.apk
+          cp app/build/outputs/apk/debug/app-debug.apk "release_assets/vyay-v${VERSION}.apk"
           cd release_assets
           sha256sum vyay-app.apk > sha256.txt
-          echo "SHA256 Checksum:"
+          sha256sum "vyay-v${VERSION}.apk" >> sha256.txt
+          echo "SHA256 Checksums:"
           cat sha256.txt
 
       - name: Upload Debug APK Artifact
@@ -80,29 +99,35 @@ jobs:
           name: vyay-app-apk
           path: release_assets/vyay-app.apk
 
-      - name: Publish GitHub Release (Direct APK Download)
+      - name: Publish GitHub Release (Preserve All Versions)
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.1.0-alpha
-          name: "Vyay (व्यय) v0.1.0-alpha"
+          tag_name: ${{ steps.versioning.outputs.tag }}
+          name: "Vyay (व्यय) ${{ steps.versioning.outputs.tag }}"
           body: |
-            ## Vyay (व्यय) — Local SMS Expense Tracker
+            ## Vyay (व्यय) ${{ steps.versioning.outputs.tag }}
             
-            ### What's New in this Build:
-            - **100% Offline & Private:** Zero `android.permission.INTERNET` in manifest.
-            - **Bank Parsers:** Native support for HDFC, SBI, ICICI, Axis, and Paytm.
-            - **Strict OTP Shield:** Bank OTPs & passwords from all senders are filtered at the gate and never written to disk.
-            - **Budgets & Pacing:** Category allocations with 80% and 100% alert thresholds.
-            - **Trips Section:** Ring-fenced travel budgets that don't corrupt monthly grocery/dining pacing.
-            - **App Lock:** Biometric & PIN lock + `FLAG_SECURE` app switcher masking.
+            This release is part of our transparent build iteration history. Every version tested in real life is preserved here so you can trace every trial and improvement.
+
+            ### What's New & Tested in this Version:
+            - **Exact Decimal Amount Parsing:** Fixed greedy 3-digit regex bug (e.g. ₹1336.05 detected accurately instead of 136).
+            - **Reference Number Deduplication:** UPI Ref / RRN / UTR numbers are now used as definitive ground truth. Duplicate SMS alerts are safely ignored while distinct sequential payments (e.g., two ₹1,000 debits) are both preserved.
+            - **Merchant Normalization:** Truncated bank SMS strings like `Indian Rail W` are cleaned to `Indian Railway 🚂`.
+            - **Fun Mode for Food & Entertainment:** Added lively emojis (`Food & Treats 🍕🍔`, `Entertainment & Fun 🍿🎬`) and merchant nuances.
+            - **Non-destructive Migration:** Existing database categories are preserved with automated upgrade in `VyayahDatabase.onOpen`.
+            - **Zero Internet Guarantee:** Manifest continues to have 0 KB internet permission.
             
-            ### Download & Install:
-            - Download `vyay-app.apk` below and install on Android 10+.
-            - On Android 13/14/15: if SMS permission is greyed out, enable *Allow restricted settings* in App Info (⋮).
+            ### Downloads:
+            - **Standard APK:** [`vyay-app.apk`](https://github.com/dot-wasim/Vyay/releases/download/${{ steps.versioning.outputs.tag }}/vyay-app.apk)
+            - **Versioned Archive APK:** [`vyay-v${{ steps.versioning.outputs.version }}.apk`](https://github.com/dot-wasim/Vyay/releases/download/${{ steps.versioning.outputs.tag }}/vyay-v${{ steps.versioning.outputs.version }}.apk)
+            
+            *See all previous versions in [Releases](https://github.com/dot-wasim/Vyay/releases) or read our full [CHANGELOG.md](https://github.com/dot-wasim/Vyay/blob/main/CHANGELOG.md).*
           files: |
             release_assets/vyay-app.apk
+            release_assets/vyay-*.apk
             release_assets/sha256.txt
           draft: false
           prerelease: false
+          make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

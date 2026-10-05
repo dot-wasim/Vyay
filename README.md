@@ -11,6 +11,7 @@
 [![Zero Internet](https://img.shields.io/badge/Internet_Permission-0_KB_/_ABSENT-00C853?style=for-the-badge&logo=shield&logoColor=white)](file:///ABOUT.md#the-zero-internet-guarantee)
 [![Obtainium](https://img.shields.io/badge/Install-Obtainium-FF6F00?style=for-the-badge&logo=android&logoColor=white)](https://github.com/dot-wasim/Vyay#method-1-seamless-auto-updates-via-obtainium-recommended)
 [![Release](https://img.shields.io/github/v/release/dot-wasim/Vyay?style=for-the-badge&color=blue)](https://github.com/dot-wasim/Vyay/releases)
+[![Build Iterations](https://img.shields.io/badge/Build_Trials-8_Iterations-blueviolet?style=for-the-badge&logo=git)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/License-Apache_2.0-lightgrey?style=for-the-badge)](file:///LICENSE)
 
 <br/>
@@ -20,7 +21,11 @@
 
 <p align="center">
   <a href="https://github.com/dot-wasim/Vyay/releases/latest/download/vyay-app.apk">
-    <img src="https://img.shields.io/badge/⬇️_Download_Latest_APK-v0.1.0-1E613B?style=for-the-badge&labelColor=141413" height="40" alt="Download APK" />
+    <img src="https://img.shields.io/badge/⬇️_Download_Latest_APK-v0.1.2--alpha-1E613B?style=for-the-badge&labelColor=141413" height="40" alt="Download APK" />
+  </a>
+  &nbsp;&nbsp;
+  <a href="CHANGELOG.md">
+    <img src="https://img.shields.io/badge/📜_Version_History-All_Trials-4B2E83?style=for-the-badge&labelColor=141413" height="40" alt="Version History" />
   </a>
   &nbsp;&nbsp;
   <a href="https://github.com/dot-wasim/Vyay#method-1-seamless-auto-updates-via-obtainium-recommended">
@@ -205,6 +210,25 @@ flowchart TD
 1. Head to the **[Releases](https://github.com/dot-wasim/Vyay/releases)** page.
 2. Download the latest `vyay-app.apk`.
 3. Tap the file in your notification bar or file manager to install.
+
+---
+
+## 📜 Version History & Journey ("How Many Times We Tried")
+
+Every release is preserved on GitHub to document the iterative engineering journey of building a 100% offline personal finance tracker. We don't overwrite mistakes or hide trial runs — every bug, field test, and improvement is transparently cataloged:
+
+| Version | Focus / Real-World Test | Key Milestone / Bug Solved | Status / Download |
+| :---: | :--- | :--- | :---: |
+| **v0.1.2-alpha** | **Real-World Field Test Fixes** | Fixed ₹1336.05 regex decimal truncation (was reading ₹136); added Reference Number (UPI Ref / RRN) deduplication for split ₹1,000 payments; normalized `Indian Rail W` $\rightarrow$ `Indian Railway 🚂`; added Fun Mode for Food 🍕 and Entertainment 🍿. | [⬇️ Download APK](https://github.com/dot-wasim/Vyay/releases/download/v0.1.2-alpha/vyay-app.apk) |
+| **v0.1.1-alpha** | **Build & KSP Stabilization** | Disambiguated Room `@androidx.room.Transaction` annotations; aligned SQLCipher room dependencies; decoupled CI test and release pipelines. | [🏷️ View Tag](https://github.com/dot-wasim/Vyay/releases/tag/v0.1.1-alpha) |
+| **v0.1.0-alpha** | **First Public Alpha & Obtainium** | Initial public distribution build with Obtainium feed support for zero-store background updates; verified zero-internet sandbox. | [⬇️ Download APK](https://github.com/dot-wasim/Vyay/releases/download/v0.1.0-alpha/vyay-app.apk) |
+| **v0.0.5-alpha** | **Devanagari Cultural Branding** | Designed adaptive icon crests with Sanskrit **व्यय** lettering; Material 3 *Parchment & Ink* palette. | [🏷️ View Tag](https://github.com/dot-wasim/Vyay/tree/v0.0.5-alpha) |
+| **v0.0.4-alpha** | **Trips & Screen Privacy** | Siloed holiday trip ledgers; added Android `FLAG_SECURE` app-switcher masking & hardware biometrics. | [🏷️ View Tag](https://github.com/dot-wasim/Vyay/tree/v0.0.4-alpha) |
+| **v0.0.3-alpha** | **Paced Budgets & Spend Velocity** | Daily burn curve trajectory formulas + local WorkManager alerts at 80% & 100% budget marks. | [🏷️ View Tag](https://github.com/dot-wasim/Vyay/tree/v0.0.3-alpha) |
+| **v0.0.2-alpha** | **Multi-Bank Regex & OTP Shield** | Regex template engine for HDFC, SBI, ICICI, Axis, Kotak, PNB + hardcoded OTP drop gatekeeper. | [🏷️ View Tag](https://github.com/dot-wasim/Vyay/tree/v0.0.2-alpha) |
+| **v0.0.1-alpha** | **Core Offline Foundation** | Removed `android.permission.INTERNET` from manifest; 256-bit AES SQLCipher Keystore database. | [🏷️ View Tag](https://github.com/dot-wasim/Vyay/tree/v0.0.1-alpha) |
+
+👉 *For the full technical breakdown of every trial and bug fix, see our complete [**CHANGELOG.md**](CHANGELOG.md).*
 
 ---
 
