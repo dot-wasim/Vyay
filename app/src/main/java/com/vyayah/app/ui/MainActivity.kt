@@ -69,9 +69,26 @@ fun MainApp() {
     val currentRoute = navBackStackEntry?.destination?.route ?: Screen.Today.route
 
     val context = androidx.compose.ui.platform.LocalContext.current
-    var isOnboardingComplete by remember {
-        val prefs = context.getSharedPreferences("vyayah_prefs", android.content.Context.MODE_PRIVATE)
-        mutableStateOf(prefs.getBoolean("onboarding_complete", false))
+    val permissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()
+    ) {
+        com.vyayah.app.worker.CatchUpSyncWorker.triggerOneTimeSync(context)
+    }
+
+    LaunchedEffect(Unit) {
+        val hasSms = androidx.core.content.ContextCompat.checkSelfPermission(
+            context,
+            android.Manifest.permission.READ_SMS
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (!hasSms) {
+            val perms = mutableListOf(android.Manifest.permission.READ_SMS, android.Manifest.permission.RECEIVE_SMS)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                perms.add(android.Manifest.permission.POST_NOTIFICATIONS)
+            }
+            permissionLauncher.launch(perms.toTypedArray())
+        } else {
+            com.vyayah.app.worker.CatchUpSyncWorker.triggerOneTimeSync(context)
+        }
     }
 
     val bottomNavTabs = listOf(
@@ -83,12 +100,7 @@ fun MainApp() {
         Screen.Ask
     )
 
-    if (!isOnboardingComplete) {
-        OnboardingScreen(
-            onComplete = { isOnboardingComplete = true }
-        )
-    } else {
-        Scaffold(
+    Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             bottomBar = {
                 val inkColor = MaterialTheme.colorScheme.onSurface
@@ -175,7 +187,6 @@ fun MainApp() {
                 composable(Screen.Settings.route) { SettingsScreen() }
             }
         }
-    }
 }
 
 @Composable

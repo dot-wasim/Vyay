@@ -93,6 +93,11 @@ class CategorizationEngine(
 
     suspend fun categorize(merchantNorm: String?, rawBody: String?): Long? {
         val rules = ruleDao.getMerchantRulesSnapshot()
+        val allCats = categoryDao.getAllCategoriesSnapshot()
+
+        fun findCatId(keyword: String): Long? {
+            return allCats.firstOrNull { it.name.contains(keyword, ignoreCase = true) }?.id
+        }
 
         // 1. Check user-defined rules first
         if (!merchantNorm.isNullOrBlank()) {
@@ -111,8 +116,8 @@ class CategorizationEngine(
             val lowerNorm = merchantNorm.lowercase()
             for ((key, catName) in BUILTIN_MERCHANT_CATEGORIES) {
                 if (lowerNorm.contains(key)) {
-                    val cat = categoryDao.getByName(catName)
-                    if (cat != null) return cat.id
+                    val id = findCatId(catName)
+                    if (id != null) return id
                 }
             }
         }
@@ -122,15 +127,14 @@ class CategorizationEngine(
             val lowerBody = rawBody.lowercase()
             for ((key, catName) in BUILTIN_MERCHANT_CATEGORIES) {
                 if (lowerBody.contains(key)) {
-                    val cat = categoryDao.getByName(catName)
-                    if (cat != null) return cat.id
+                    val id = findCatId(catName)
+                    if (id != null) return id
                 }
             }
         }
 
         // Default to "Other"
-        val otherCategory = categoryDao.getByName("Other")
-        return otherCategory?.id
+        return findCatId("Other") ?: allCats.firstOrNull()?.id
     }
 
     suspend fun teachMerchantRule(merchantPattern: String, categoryId: Long) {

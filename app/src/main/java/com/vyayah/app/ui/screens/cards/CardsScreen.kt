@@ -513,7 +513,8 @@ fun CardsScreen(
                                 openingBalance = balPaise,
                                 currentBalance = balPaise,
                                 outstanding = if (isCreditCard) balPaise else null,
-                                creditLimit = limitPaise
+                                creditLimit = limitPaise,
+                                lastReconciledAt = System.currentTimeMillis()
                             )
                         )
                         showAddDialog = false

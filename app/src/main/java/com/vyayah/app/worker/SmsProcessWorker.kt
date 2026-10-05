@@ -86,13 +86,17 @@ class SmsProcessWorker(
 
             if (account != null) {
                 accountId = account.id
-                // Balance calculation:
-                // If SMS specifies Avl Bal, use bank's official number
-                val newBalance = parsed.availableBalanceMinor ?: when (parsed.direction) {
-                    TransactionDirection.DEBIT -> account.currentBalance - parsed.amountMinor
-                    TransactionDirection.CREDIT -> account.currentBalance + parsed.amountMinor
+                // Anchor Balance Math:
+                // If the transaction timestamp is forward in time relative to the reconciled anchor balance (or if no anchor set),
+                // we update the forward balance. Past historical transactions must never alter today's anchor balance.
+                val isForwardTransaction = account.lastReconciledAt == null || timestamp >= account.lastReconciledAt
+                if (isForwardTransaction) {
+                    val newBalance = parsed.availableBalanceMinor ?: when (parsed.direction) {
+                        TransactionDirection.DEBIT -> account.currentBalance - parsed.amountMinor
+                        TransactionDirection.CREDIT -> account.currentBalance + parsed.amountMinor
+                    }
+                    accountDao.updateBalance(account.id, newBalance, timestamp)
                 }
-                accountDao.updateBalance(account.id, newBalance, timestamp)
             } else {
                 // Auto-suggest / create initial account from SMS
                 val initialBalance = parsed.availableBalanceMinor ?: 0L
@@ -107,6 +111,26 @@ class SmsProcessWorker(
                     lastReconciledAt = timestamp
                 )
                 accountId = accountDao.insert(newAcc)
+            }
+        }
+
+        // 5b. Update Credit Card Dues on Bill Payment or Card Swipes (Forward transactions only)
+        if (parsed.type == TransactionType.BILL_PAYMENT) {
+            val allAccounts = accountDao.getAllAccountsSnapshot()
+            val cardAccount = allAccounts.firstOrNull { it.type == AccountType.CREDIT && (parsed.accountLast4 == null || it.last4 == parsed.accountLast4) }
+                ?: allAccounts.firstOrNull { it.type == AccountType.CREDIT }
+            val isForward = cardAccount?.lastReconciledAt == null || timestamp >= (cardAccount.lastReconciledAt ?: 0L)
+            if (isForward && cardAccount != null && cardAccount.outstanding != null) {
+                val newOutstanding = (cardAccount.outstanding - parsed.amountMinor).coerceAtLeast(0L)
+                accountDao.updateOutstanding(cardAccount.id, newOutstanding)
+            }
+        } else if (parsed.instrument == PaymentInstrument.CARD && parsed.direction == TransactionDirection.DEBIT) {
+            val allAccounts = accountDao.getAllAccountsSnapshot()
+            val cardAccount = allAccounts.firstOrNull { it.type == AccountType.CREDIT && (parsed.accountLast4 == null || it.last4 == parsed.accountLast4) }
+            val isForward = cardAccount?.lastReconciledAt == null || timestamp >= (cardAccount.lastReconciledAt ?: 0L)
+            if (isForward && cardAccount != null) {
+                val newOutstanding = ((cardAccount.outstanding ?: 0L) + parsed.amountMinor)
+                accountDao.updateOutstanding(cardAccount.id, newOutstanding)
             }
         }
 

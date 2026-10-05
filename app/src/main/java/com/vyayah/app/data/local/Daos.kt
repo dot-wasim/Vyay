@@ -33,6 +33,9 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions ORDER BY timestamp DESC")
     fun getAllTransactions(): Flow<List<Transaction>>
 
+    @Query("SELECT * FROM transactions ORDER BY timestamp DESC")
+    suspend fun getAllTransactionsSnapshot(): List<Transaction>
+
     @Query("SELECT * FROM transactions WHERE timestamp BETWEEN :startTime AND :endTime ORDER BY timestamp DESC")
     fun getTransactionsBetween(startTime: Long, endTime: Long): Flow<List<Transaction>>
 
@@ -106,6 +109,15 @@ interface AccountDao {
 
     @Query("UPDATE accounts SET outstanding = :newOutstanding WHERE id = :id")
     suspend fun updateOutstanding(id: Long, newOutstanding: Long)
+
+    @Query("SELECT * FROM accounts ORDER BY bank ASC, last4 ASC")
+    suspend fun getAllAccountsSnapshot(): List<Account>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(accounts: List<Account>): List<Long>
+
+    @Query("DELETE FROM accounts")
+    suspend fun clearAll()
 }
 
 @Dao
@@ -151,6 +163,15 @@ interface BudgetDao {
 
     @Query("SELECT * FROM budgets WHERE categoryId = :categoryId LIMIT 1")
     suspend fun getByCategory(categoryId: Long?): Budget?
+
+    @Query("SELECT * FROM budgets")
+    suspend fun getAllBudgetsSnapshot(): List<Budget>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(budgets: List<Budget>): List<Long>
+
+    @Query("DELETE FROM budgets")
+    suspend fun clearAll()
 }
 
 @Dao
@@ -166,6 +187,15 @@ interface GoalDao {
 
     @Query("SELECT * FROM goals ORDER BY status ASC, targetDate ASC")
     fun getAllGoals(): Flow<List<Goal>>
+
+    @Query("SELECT * FROM goals ORDER BY status ASC, targetDate ASC")
+    suspend fun getAllGoalsSnapshot(): List<Goal>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(goals: List<Goal>): List<Long>
+
+    @Query("DELETE FROM goals")
+    suspend fun clearAll()
 }
 
 @Dao

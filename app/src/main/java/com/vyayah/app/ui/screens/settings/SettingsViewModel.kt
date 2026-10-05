@@ -64,20 +64,12 @@ class SettingsViewModel(
     }
 
     suspend fun exportEncryptedBackup(context: Context): File? = withContext(Dispatchers.IO) {
-        try {
-            val dbPath = context.getDatabasePath("vyayah_encrypted.db")
-            if (!dbPath.exists()) return@withContext null
+        val ledgerKey = getLedgerKey(context)
+        BackupKeyManager.createEncryptedBackup(context, database, ledgerKey)
+    }
 
-            val rawBytes = dbPath.readBytes()
-            val ledgerKey = getLedgerKey(context)
-            val encryptedBackup = BackupKeyManager.encryptWithVaultKey(ledgerKey, rawBytes)
-
-            val exportFile = File(context.cacheDir, "vyayah_backup_${System.currentTimeMillis()}.vyayah")
-            FileOutputStream(exportFile).use { it.write(encryptedBackup) }
-            exportFile
-        } catch (e: Exception) {
-            null
-        }
+    suspend fun restoreEncryptedBackup(context: Context, keyPhrase: String): Boolean = withContext(Dispatchers.IO) {
+        BackupKeyManager.restoreFromEncryptedBackup(context, database, keyPhrase)
     }
 
     fun triggerBackfill(context: Context, monthsBack: Int) {

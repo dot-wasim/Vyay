@@ -1,14 +1,33 @@
 package com.vyayah.app.data.security
 
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import com.vyayah.app.data.local.VyayahDatabase
+import com.vyayah.app.data.model.*
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import java.io.File
+import java.io.FileOutputStream
 import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
+
+@Serializable
+data class VaultBackupPayload(
+    val version: Int = 1,
+    val timestamp: Long = System.currentTimeMillis(),
+    val accounts: List<Account> = emptyList(),
+    val transactions: List<Transaction> = emptyList(),
+    val categories: List<Category> = emptyList(),
+    val budgets: List<Budget> = emptyList(),
+    val goals: List<Goal> = emptyList()
+)
 
 /**
  * Manages the "Vault Key" (Ledger Key) - the sovereign local recovery key
@@ -21,6 +40,13 @@ object BackupKeyManager {
     private const val KEY_LENGTH_BITS = 256
     private const val GCM_IV_LENGTH = 12
     private const val GCM_TAG_LENGTH = 128
+    const val BACKUP_FILENAME = "vyayah_vault_backup.vyayah"
+
+    private val jsonHelper = Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true
+        isLenient = true
+    }
 
     private val MNEMONIC_WORDS = listOf(
         "amber", "bamboo", "cedar", "delta", "ember", "falcon", "glacier", "harbor",
@@ -30,16 +56,22 @@ object BackupKeyManager {
         "island", "jungle", "lagoon", "monarch", "oasis", "prairie", "ridge", "savanna"
     )
 
-    private fun getEncryptedPrefs(context: Context) = EncryptedSharedPreferences.create(
-        context,
-        PREFS_NAME,
-        MasterKey.Builder(context).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build(),
-        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-    )
+    private fun getPrefs(context: Context): SharedPreferences {
+        return try {
+            EncryptedSharedPreferences.create(
+                context,
+                PREFS_NAME,
+                MasterKey.Builder(context).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build(),
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        } catch (_: Exception) {
+            context.getSharedPreferences("vyayah_vault_fallback_prefs", Context.MODE_PRIVATE)
+        }
+    }
 
     fun getOrCreateVaultKey(context: Context): String {
-        val prefs = getEncryptedPrefs(context)
+        val prefs = getPrefs(context)
         var vaultKey = prefs.getString(KEY_VAULT_CODE, null)
         if (vaultKey == null) {
             vaultKey = generateNewVaultKey()
@@ -56,7 +88,7 @@ object BackupKeyManager {
         val words = cleanKey.split(Regex("\\s+"))
         if (words.size < 12) return false
 
-        val prefs = getEncryptedPrefs(context)
+        val prefs = getPrefs(context)
         prefs.edit().putString(KEY_VAULT_CODE, cleanKey).apply()
         return true
     }
@@ -103,5 +135,80 @@ object BackupKeyManager {
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.DECRYPT_MODE, secretKey, GCMParameterSpec(GCM_TAG_LENGTH, iv))
         return cipher.doFinal(ciphertext)
+    }
+
+    suspend fun createEncryptedBackup(context: Context, database: VyayahDatabase, vaultKey: String): File? {
+        return try {
+            val accounts = database.accountDao().getAllAccountsSnapshot()
+            val transactions = database.transactionDao().getAllTransactionsSnapshot()
+            val categories = database.categoryDao().getAllCategoriesSnapshot()
+            val budgets = database.budgetDao().getAllBudgetsSnapshot()
+            val goals = database.goalDao().getAllGoalsSnapshot()
+
+            val payload = VaultBackupPayload(
+                accounts = accounts,
+                transactions = transactions,
+                categories = categories,
+                budgets = budgets,
+                goals = goals
+            )
+
+            val jsonString = jsonHelper.encodeToString(payload)
+            val encryptedBytes = encryptWithVaultKey(vaultKey, jsonString.toByteArray(Charsets.UTF_8))
+
+            val internalFile = File(context.filesDir, BACKUP_FILENAME)
+            FileOutputStream(internalFile).use { it.write(encryptedBytes) }
+
+            val exportFile = File(context.cacheDir, "vyayah_backup_${System.currentTimeMillis()}.vyayah")
+            FileOutputStream(exportFile).use { it.write(encryptedBytes) }
+
+            exportFile
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    suspend fun restoreFromEncryptedBackup(
+        context: Context,
+        database: VyayahDatabase,
+        vaultKey: String,
+        sourceFile: File? = null
+    ): Boolean {
+        return try {
+            val fileToRead = sourceFile ?: File(context.filesDir, BACKUP_FILENAME)
+            if (!fileToRead.exists() || fileToRead.length() <= 28) return false
+
+            val encryptedBytes = fileToRead.readBytes()
+            val decryptedBytes = decryptWithVaultKey(vaultKey, encryptedBytes)
+            val jsonString = String(decryptedBytes, Charsets.UTF_8)
+            val payload = jsonHelper.decodeFromString<VaultBackupPayload>(jsonString)
+
+            if (payload.accounts.isNotEmpty()) {
+                database.accountDao().clearAll()
+                database.accountDao().insertAll(payload.accounts)
+            }
+            if (payload.transactions.isNotEmpty()) {
+                database.transactionDao().clearAll()
+                database.transactionDao().insertAll(payload.transactions)
+            }
+            if (payload.categories.isNotEmpty()) {
+                database.categoryDao().insertAll(payload.categories)
+            }
+            if (payload.budgets.isNotEmpty()) {
+                database.budgetDao().clearAll()
+                database.budgetDao().insertAll(payload.budgets)
+            }
+            if (payload.goals.isNotEmpty()) {
+                database.goalDao().clearAll()
+                database.goalDao().insertAll(payload.goals)
+            }
+
+            importVaultKey(context, vaultKey)
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
     }
 }

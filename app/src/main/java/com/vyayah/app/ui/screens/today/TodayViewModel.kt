@@ -20,6 +20,8 @@ data class CategorySpend(
 data class TodayUiState(
     val totalAvailableBalanceMinor: Long = 0L,
     val totalCreditOutstandingMinor: Long = 0L,
+    val totalNetBalanceMinor: Long = 0L,
+    val accounts: List<Account> = emptyList(),
     val monthToDateSpendMinor: Long = 0L,
     val monthIncomeMinor: Long = 0L,
     val netSavingsMinor: Long = 0L,
@@ -151,9 +153,13 @@ class TodayViewModel(
 
         val latestTxnTimestamp = txns.maxOfOrNull { it.timestamp } ?: 0L
 
+        val netBalance = totalAvlBal - totalOutstanding
+
         return TodayUiState(
             totalAvailableBalanceMinor = totalAvlBal,
             totalCreditOutstandingMinor = totalOutstanding,
+            totalNetBalanceMinor = netBalance,
+            accounts = accounts,
             monthToDateSpendMinor = mtdSpend,
             monthIncomeMinor = mtdIncome,
             netSavingsMinor = netSavings,
@@ -165,5 +171,11 @@ class TodayViewModel(
             hideAmounts = hide,
             lastProcessedTimestamp = latestTxnTimestamp
         )
+    }
+
+    fun addOrUpdateAccount(account: Account) {
+        viewModelScope.launch {
+            accountDao.insert(account)
+        }
     }
 }

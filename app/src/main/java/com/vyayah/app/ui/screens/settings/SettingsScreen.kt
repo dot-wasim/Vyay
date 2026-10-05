@@ -529,12 +529,20 @@ fun SettingsScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        val success = viewModel.pasteAndImportLedgerKey(context, pastedPhrase)
-                        if (success) {
-                            Toast.makeText(context, "Ledger Key restored successfully!", Toast.LENGTH_LONG).show()
-                            showPasteKeyDialog = false
-                        } else {
-                            Toast.makeText(context, "Invalid key: Please enter all 12 words", Toast.LENGTH_SHORT).show()
+                        coroutineScope.launch {
+                            val restored = viewModel.restoreEncryptedBackup(context, pastedPhrase)
+                            if (restored) {
+                                Toast.makeText(context, "Ledger Key & all accounts/transactions restored!", Toast.LENGTH_LONG).show()
+                                showPasteKeyDialog = false
+                            } else {
+                                val success = viewModel.pasteAndImportLedgerKey(context, pastedPhrase)
+                                if (success) {
+                                    Toast.makeText(context, "Ledger Key saved. Waiting for backup data file.", Toast.LENGTH_LONG).show()
+                                    showPasteKeyDialog = false
+                                } else {
+                                    Toast.makeText(context, "Invalid key: Please enter all 12 words", Toast.LENGTH_SHORT).show()
+                                }
+                            }
                         }
                     }
                 ) {

@@ -1,13 +1,17 @@
 package com.vyayah.app.ui.screens.today
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -21,6 +25,8 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.vyayah.app.data.model.Account
+import com.vyayah.app.data.model.AccountType
 import com.vyayah.app.parser.AmountParser
 import com.vyayah.app.ui.components.CategoryLeaderRow
 import com.vyayah.app.ui.components.CumulativeSpendChart
@@ -40,6 +46,9 @@ fun TodayScreen(
     val uiState by viewModel.uiState.collectAsState()
     val inkColor = MaterialTheme.colorScheme.onSurface
     val borderColor = inkColor.copy(alpha = 0.2f)
+
+    var showAccountDialog by remember { mutableStateOf(false) }
+    var editingAccount by remember { mutableStateOf<Account?>(null) }
 
     val todayDateString = remember {
         SimpleDateFormat("EEEE, MMMM d", Locale.ENGLISH).format(Date()).uppercase()
@@ -195,6 +204,168 @@ fun TodayScreen(
                 Divider(color = borderColor, thickness = 1.dp)
             }
 
+            // Total Net Balance Card with Translucent Rupee Watermark
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)
+                    )
+                ) {
+                    Box(modifier = Modifier.fillMaxWidth().padding(18.dp)) {
+                        // Translucent Rupee Watermark in background
+                        Text(
+                            text = "₹",
+                            fontSize = 110.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Serif,
+                            color = inkColor.copy(alpha = 0.06f),
+                            modifier = Modifier
+                                .align(Alignment.CenterEnd)
+                                .offset(x = 12.dp, y = (-8).dp)
+                        )
+
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "TOTAL NET BALANCE",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 11.sp,
+                                        letterSpacing = 1.2.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = inkColor.copy(alpha = 0.65f)
+                                    )
+                                )
+                                Text(
+                                    text = "REAL-TIME",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 10.sp,
+                                        letterSpacing = 1.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = ForestGreen
+                                    )
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            Text(
+                                text = displayAmount(uiState.totalNetBalanceMinor),
+                                style = MaterialTheme.typography.headlineLarge.copy(
+                                    fontFamily = FontFamily.Serif,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 36.sp,
+                                    color = inkColor
+                                )
+                            )
+
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            Text(
+                                text = "Banks: ${displayAmount(uiState.totalAvailableBalanceMinor)} · Cards Due: -${displayAmount(uiState.totalCreditOutstandingMinor)}",
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontFamily = FontFamily.SansSerif,
+                                    color = inkColor.copy(alpha = 0.7f),
+                                    fontSize = 12.sp
+                                )
+                            )
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            // Horizontal scroll of bank chips and credit cards + Add Chip
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                items(uiState.accounts) { acc ->
+                                    val isCard = acc.type == AccountType.CREDIT
+                                    val bal = if (isCard) (acc.outstanding ?: 0L) else acc.currentBalance
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = MaterialTheme.colorScheme.background,
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, borderColor),
+                                        modifier = Modifier.clickable {
+                                            editingAccount = acc
+                                            showAccountDialog = true
+                                        }
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = if (isCard) Icons.Default.CreditCard else Icons.Default.AccountBalance,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(14.dp),
+                                                tint = if (isCard) MaterialTheme.colorScheme.error else ForestGreen
+                                            )
+                                            Column {
+                                                Text(
+                                                    text = acc.bank,
+                                                    style = MaterialTheme.typography.labelSmall.copy(
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 11.sp,
+                                                        color = inkColor
+                                                    )
+                                                )
+                                                Text(
+                                                    text = (if (isCard) "- " else "") + displayAmount(bal),
+                                                    style = MaterialTheme.typography.labelSmall.copy(
+                                                        fontSize = 10.sp,
+                                                        color = if (isCard) MaterialTheme.colorScheme.error else inkColor.copy(alpha = 0.7f)
+                                                    )
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+
+                                item {
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = ForestGreen.copy(alpha = 0.1f),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, ForestGreen.copy(alpha = 0.3f)),
+                                        modifier = Modifier.clickable {
+                                            editingAccount = null
+                                            showAccountDialog = true
+                                        }
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Add,
+                                                contentDescription = "Add Account",
+                                                modifier = Modifier.size(14.dp),
+                                                tint = ForestGreen
+                                            )
+                                            Text(
+                                                text = "Add Bank/Card",
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 11.sp,
+                                                    color = ForestGreen
+                                                )
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             // Spent Pacing Section
             item {
                 Column(modifier = Modifier.padding(top = 8.dp)) {
@@ -321,5 +492,109 @@ fun TodayScreen(
                 Spacer(modifier = Modifier.height(32.dp))
             }
         }
+    }
+
+    if (showAccountDialog) {
+        var bankName by remember { mutableStateOf(editingAccount?.bank ?: "") }
+        var last4 by remember { mutableStateOf(editingAccount?.last4 ?: "") }
+        var balanceRupees by remember {
+            val amt = editingAccount?.let { acc ->
+                if (acc.type == AccountType.CREDIT) (acc.outstanding ?: 0L) else acc.currentBalance
+            } ?: 0L
+            mutableStateOf(if (amt > 0) (amt / 100).toString() else "")
+        }
+        var isCreditCard by remember { mutableStateOf(editingAccount?.type == AccountType.CREDIT) }
+        var creditLimitRupees by remember {
+            val limit = editingAccount?.creditLimit ?: 0L
+            mutableStateOf(if (limit > 0) (limit / 100).toString() else "")
+        }
+
+        AlertDialog(
+            onDismissRequest = { showAccountDialog = false },
+            title = {
+                Text(
+                    text = if (editingAccount != null) "Edit Account / Card" else "Add Bank or Card",
+                    fontFamily = FontFamily.Serif,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(
+                        value = bankName,
+                        onValueChange = { bankName = it },
+                        label = { Text("Bank Name (e.g. Federal, HDFC, SBI)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = last4,
+                        onValueChange = { if (it.length <= 4) last4 = it },
+                        label = { Text("Last 4 digits") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = balanceRupees,
+                        onValueChange = { balanceRupees = it },
+                        label = { Text(if (isCreditCard) "Current Dues (₹)" else "Available Balance (₹)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { isCreditCard = !isCreditCard }
+                    ) {
+                        Checkbox(checked = isCreditCard, onCheckedChange = { isCreditCard = it })
+                        Text("This is a Credit Card")
+                    }
+                    if (isCreditCard) {
+                        OutlinedTextField(
+                            value = creditLimitRupees,
+                            onValueChange = { creditLimitRupees = it },
+                            label = { Text("Credit Limit (₹)") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val balPaise = AmountParser.parseToMinorUnits(balanceRupees.ifBlank { "0" })
+                        val limitPaise = if (isCreditCard) AmountParser.parseToMinorUnits(creditLimitRupees.ifBlank { "0" }) else null
+                        val now = System.currentTimeMillis()
+
+                        val accountToSave = (editingAccount ?: Account(
+                            bank = bankName.ifBlank { "Bank" },
+                            type = if (isCreditCard) AccountType.CREDIT else AccountType.SAVINGS,
+                            last4 = last4.ifBlank { "0000" },
+                            nickname = "$bankName $last4"
+                        )).copy(
+                            bank = bankName.ifBlank { "Bank" },
+                            type = if (isCreditCard) AccountType.CREDIT else AccountType.SAVINGS,
+                            last4 = last4.ifBlank { "0000" },
+                            nickname = "$bankName $last4",
+                            openingBalance = balPaise,
+                            currentBalance = balPaise,
+                            outstanding = if (isCreditCard) balPaise else null,
+                            creditLimit = limitPaise,
+                            lastReconciledAt = now
+                        )
+
+                        viewModel.addOrUpdateAccount(accountToSave)
+                        showAccountDialog = false
+                    }
+                ) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAccountDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }

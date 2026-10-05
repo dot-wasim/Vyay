@@ -67,7 +67,7 @@ jobs:
         run: |
           VERSION=$(grep 'versionName = ' app/build.gradle.kts | head -1 | sed -E 's/.*versionName = "([^"]+)".*/\1/')
           if [ -z "$VERSION" ]; then
-            VERSION="0.1.2-alpha"
+            VERSION="0.2.0-beta"
           fi
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             TAG="${GITHUB_REF#refs/tags/}"
@@ -107,15 +107,17 @@ jobs:
           body: |
             ## Vyay (व्यय) ${{ steps.versioning.outputs.tag }}
             
-            This release is part of our transparent build iteration history. Every version tested in real life is preserved here so you can trace every trial and improvement.
+            This release represents Phase 1: Core Accounting, Sovereign Offline Backup, and Editorial UX Polish.
 
             ### What's New & Tested in this Version:
-            - **Exact Decimal Amount Parsing:** Fixed greedy 3-digit regex bug (e.g. ₹1336.05 detected accurately instead of 136).
-            - **Reference Number Deduplication:** UPI Ref / RRN / UTR numbers are now used as definitive ground truth. Duplicate SMS alerts are safely ignored while distinct sequential payments (e.g., two ₹1,000 debits) are both preserved.
-            - **Merchant Normalization:** Truncated bank SMS strings like `Indian Rail W` are cleaned to `Indian Railway 🚂`.
-            - **Fun Mode for Food & Entertainment:** Added lively emojis (`Food & Treats 🍕🍔`, `Entertainment & Fun 🍿🎬`) and merchant nuances.
-            - **Non-destructive Migration:** Existing database categories are preserved with automated upgrade in `VyayahDatabase.onOpen`.
-            - **Zero Internet Guarantee:** Manifest continues to have 0 KB internet permission.
+            - **Anchor Balance Math:** Today's reconciled bank balance is the definitive anchor ($t_0$). SMS scans move backward and past transactions do not alter today's starting balance.
+            - **Zero-Interrogation Onboarding:** Removed onboarding questionnaires and timeframe inquiries; the app opens directly to the dashboard.
+            - **Credit Card Bill Double-Counting Elimination:** Bill settlements from bank accounts are classified as internal transfers (`BILL_PAYMENT`), excluded from monthly expenditure and reducing card dues.
+            - **Real Sovereign 12-Word Ledger Key:** AES-256-GCM encrypted snapshot backup of all accounts, cards, transactions, and categories with 12-word restore capability.
+            - **Dashboard Total Net Balance Card & Translucent ₹ Watermark:** Real-time net balance (Banks minus Card dues) with the signature translucent Rupee watermark.
+            - **Manual Account & Card Manager:** Effortlessly add and edit bank balances (Federal, HDFC, SBI, ICICI, etc.) and credit card limits directly from the dashboard.
+            - **Broad Category Matching:** Fixed emoji category lookup bug ensuring transactions are classified into broad categories.
+            - **Zero Internet Guarantee:** Offline sovereign architecture with 0 KB internet permission.
             
             ### Downloads:
             - **Standard APK:** [`vyay-app.apk`](https://github.com/dot-wasim/Vyay/releases/download/${{ steps.versioning.outputs.tag }}/vyay-app.apk)

@@ -245,5 +245,25 @@ class BankSmsParserTest {
         assertEquals("PVR Cinemas 🍿", MerchantNormalizer.normalize("PVR CINEMAS FORUM"))
         assertEquals("Indian Railway 🚂", MerchantNormalizer.normalize("INDIAN RAIL W"))
     }
+
+    @Test
+    fun testSbiCreditCardBillPayment() {
+        val sender = "AD-SBINB"
+        val body = "Payment of Rs 10,000.00 received towards SBI Card ending in 4567 on 05-Oct-26 via CRED. Thank you."
+        val result = BankSmsParser.parse(sender, body)
+        assertNotNull(result)
+        assertEquals(1000000L, result!!.amountMinor)
+        assertEquals(TransactionType.BILL_PAYMENT, result.type)
+    }
+
+    @Test
+    fun testIciciCreditCardBillPayment() {
+        val sender = "VM-ICICIB"
+        val body = "Payment of INR 10,000.00 received towards ICICI Bank Credit Card XX4321 on 05-Oct-26. Current outstanding updated."
+        val result = BankSmsParser.parse(sender, body)
+        assertNotNull(result)
+        assertEquals(1000000L, result!!.amountMinor)
+        assertEquals(TransactionType.BILL_PAYMENT, result.type)
+    }
 }
 

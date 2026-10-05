@@ -57,7 +57,19 @@ object BankTemplates {
 
         val direction: TransactionDirection
         val type: TransactionType
+        val isBillPayment = b.contains("CARD PAYMENT") ||
+            b.contains("CREDIT CARD PAYMENT") ||
+            b.contains("CC PAYMENT") ||
+            b.contains("AUTODEBIT CC") ||
+            b.contains("CRED") ||
+            (b.contains("PAYMENT") && b.contains("TOWARDS") && (b.contains("CARD") || b.contains("BILLDESK"))) ||
+            (b.contains("PAYMENT") && b.contains("RECEIVED") && b.contains("CARD"))
+
         when {
+            isBillPayment -> {
+                direction = if (b.contains("RECEIVED") || b.contains("CREDITED")) TransactionDirection.CREDIT else TransactionDirection.DEBIT
+                type = TransactionType.BILL_PAYMENT
+            }
             b.contains("REFUND") -> {
                 direction = TransactionDirection.CREDIT
                 type = TransactionType.REFUND
@@ -126,8 +138,18 @@ object BankTemplates {
         val avlBal = extractAvlBal(body)
 
         val direction: TransactionDirection
-        val type: TransactionType
+        val isBillPayment = b.contains("CARD PAYMENT") ||
+            b.contains("CREDIT CARD PAYMENT") ||
+            b.contains("TOWARDS SBI CARD") ||
+            b.contains("CRED") ||
+            (b.contains("PAYMENT") && b.contains("TOWARDS") && b.contains("CARD")) ||
+            (b.contains("PAYMENT") && b.contains("RECEIVED") && b.contains("CARD"))
+
         when {
+            isBillPayment -> {
+                direction = if (b.contains("RECEIVED") || b.contains("CREDITED")) TransactionDirection.CREDIT else TransactionDirection.DEBIT
+                type = TransactionType.BILL_PAYMENT
+            }
             b.contains("REFUND") -> {
                 direction = TransactionDirection.CREDIT
                 type = TransactionType.REFUND
@@ -195,7 +217,17 @@ object BankTemplates {
 
         val direction: TransactionDirection
         val type: TransactionType
+        val isBillPayment = b.contains("CARD PAYMENT") ||
+            b.contains("CREDIT CARD PAYMENT") ||
+            b.contains("TOWARDS ICICI BANK CREDIT CARD") ||
+            b.contains("CRED") ||
+            (b.contains("PAYMENT") && b.contains("CARD"))
+
         when {
+            isBillPayment -> {
+                direction = if (b.contains("RECEIVED") || b.contains("CREDITED")) TransactionDirection.CREDIT else TransactionDirection.DEBIT
+                type = TransactionType.BILL_PAYMENT
+            }
             b.contains("REFUND") -> {
                 direction = TransactionDirection.CREDIT
                 type = TransactionType.REFUND
@@ -256,8 +288,15 @@ object BankTemplates {
         val upiVpa = VPA_REGEX.find(body)?.groupValues?.get(1)
         val avlBal = extractAvlBal(body)
 
+        val isAxisBillPayment = b.contains("CARD PAYMENT") ||
+            b.contains("CREDIT CARD PAYMENT") ||
+            b.contains("TOWARDS AXIS BANK CREDIT CARD") ||
+            b.contains("CRED") ||
+            (b.contains("PAYMENT") && b.contains("CARD"))
+
         val direction = if (b.contains("CREDITED") || b.contains("REFUND")) TransactionDirection.CREDIT else TransactionDirection.DEBIT
         val type = when {
+            isAxisBillPayment -> TransactionType.BILL_PAYMENT
             b.contains("ATM") || b.contains("WITHDRAWAL") -> TransactionType.ATM
             b.contains("REFUND") -> TransactionType.REFUND
             b.contains("CREDITED") -> TransactionType.INCOME
